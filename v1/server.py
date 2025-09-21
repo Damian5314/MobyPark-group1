@@ -8,6 +8,7 @@ from session_manager import add_session, remove_session, get_session
 import session_calculator as sc
 
 class RequestHandler(BaseHTTPRequestHandler):
+    # POST Data
     def do_POST(self):
         if self.path == "/register":
             data  = json.loads(self.rfile.read(int(self.headers.get("Content-Length", -1))))
@@ -327,6 +328,10 @@ class RequestHandler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps({"status": "Success", "payment": payment}).encode("utf-8"))
             return
 
+
+
+
+    # PUT/Update data
     def do_PUT(self):
         if self.path.startswith("/parking-lots/"):
             lid = self.path.split("/")[2]
@@ -508,6 +513,9 @@ class RequestHandler(BaseHTTPRequestHandler):
                 return
 
 
+
+
+    # DELETE Functies, Verwijderen
     def do_DELETE(self):
         if self.path.startswith("/parking-lots/"):
             lid = self.path.split("/")[2]
@@ -625,6 +633,9 @@ class RequestHandler(BaseHTTPRequestHandler):
                 return
 
 
+
+
+    # GET, Verkrijg data
     def do_GET(self):
         if self.path == "/profile":
             token = self.headers.get('Authorization')
