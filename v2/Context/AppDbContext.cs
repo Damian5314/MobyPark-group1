@@ -16,7 +16,6 @@ namespace v2.Data
         public DbSet<ParkingSession> ParkingSessions { get; set; } = null!;
 
 
-        // Billing can be computed from Payments, so no DbSet for Billing
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -65,25 +64,6 @@ namespace v2.Data
             // PAYMENT
             modelBuilder.Entity<Payment>()
                 .HasKey(p => p.Transaction);
-
-            // No foreign key — CoupledTo is a simple string reference
-
-            // OPTIONAL: Configure decimal precision for financial fields
-            modelBuilder.Entity<Reservation>()
-                .Property(r => r.Cost)
-                .HasColumnType("decimal(18,2)");
-
-            modelBuilder.Entity<Payment>()
-                .Property(p => p.Amount)
-                .HasColumnType("decimal(18,2)");
-
-            modelBuilder.Entity<ParkingLot>()
-                .Property(p => p.Tariff)
-                .HasColumnType("decimal(18,2)");
-
-            modelBuilder.Entity<ParkingLot>()
-                .Property(p => p.DayTariff)
-                .HasColumnType("decimal(18,2)");
         }
     }
 }
