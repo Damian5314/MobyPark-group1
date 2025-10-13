@@ -1,16 +1,27 @@
-using System;
+using Newtonsoft.Json;
 
-namespace v2.Models
+public class Vehicle
 {
-    public class Vehicle
-    {
-        public string Id { get; set; } = null!;
-        public int UserId { get; set; }
-        public string LicensePlate { get; set; } = null!;
-        public string Make { get; set; } = null!;
-        public string Model { get; set; } = null!;
-        public string Color { get; set; } = null!;
-        public int Year { get; set; }
-        public DateTime CreatedAt { get; set; }
-    }
+    public int Id { get; set; }
+
+    [JsonProperty("user_id")]
+    public int UserId { get; set; }
+
+    [JsonProperty("license_plate")]
+    public string LicensePlate { get; set; } = null!;
+
+    [JsonProperty("make")]
+    public string Make { get; set; } = null!;
+
+    [JsonProperty("model")]
+    public string Model { get; set; } = null!;
+
+    [JsonProperty("color")]
+    public string Color { get; set; } = null!;
+
+    [JsonProperty("year")]
+    public int Year { get; set; }
+
+    [JsonProperty("created_at")]
+    public DateTime CreatedAt { get; set; }
 }

@@ -1,8 +1,10 @@
+using Newtonsoft.Json;
+
 namespace v2.Models
 {
     public class UserProfile
     {
-        public string Id { get; set; } = null!;
+        public int Id { get; set; }
         public string Username { get; set; } = null!;
         public string Password { get; set; } = null!;
 
@@ -10,7 +12,11 @@ namespace v2.Models
         public string? Email { get; set; }
         public string Phone { get; set; } = null!;
         public string Role { get; set; } = "USER";
+
+        [JsonProperty("created_at")]
         public DateTime CreatedAt { get; set; }
+        
+        [JsonProperty("birth_year")]
         public int BirthYear { get; set; }
         public bool Active { get; set; }
     }

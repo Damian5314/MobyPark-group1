@@ -13,8 +13,10 @@ namespace v2.Data
         public DbSet<ParkingLot> ParkingLots { get; set; } = null!;
         public DbSet<Reservation> Reservations { get; set; } = null!;
         public DbSet<Payment> Payments { get; set; } = null!;
+        public DbSet<ParkingSession> ParkingSessions { get; set; } = null!;
 
-        // Billing can be computed from Payments, so no DbSet
+
+        // Billing can be computed from Payments, so no DbSet for Billing
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -64,13 +66,9 @@ namespace v2.Data
             modelBuilder.Entity<Payment>()
                 .HasKey(p => p.Transaction);
 
-            modelBuilder.Entity<Payment>()
-                .HasOne<Reservation>()
-                .WithMany()
-                .HasForeignKey(p => p.CoupledTo)
-                .OnDelete(DeleteBehavior.SetNull);
+            // No foreign key — CoupledTo is a simple string reference
 
-            // OPTIONAL: Configure decimal precision for Cost/Amount
+            // OPTIONAL: Configure decimal precision for financial fields
             modelBuilder.Entity<Reservation>()
                 .Property(r => r.Cost)
                 .HasColumnType("decimal(18,2)");
