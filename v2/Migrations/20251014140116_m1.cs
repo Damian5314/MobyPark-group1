@@ -23,8 +23,8 @@ namespace v2.Migrations
                     Address = table.Column<string>(type: "text", nullable: false),
                     Capacity = table.Column<int>(type: "integer", nullable: false),
                     Reserved = table.Column<int>(type: "integer", nullable: false),
-                    Tariff = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
-                    DayTariff = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    Tariff = table.Column<decimal>(type: "numeric", nullable: false),
+                    DayTariff = table.Column<decimal>(type: "numeric", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Latitude = table.Column<double>(type: "double precision", nullable: false),
                     Longitude = table.Column<double>(type: "double precision", nullable: false)
@@ -42,8 +42,6 @@ namespace v2.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     ParkingLotId = table.Column<int>(type: "integer", nullable: false),
                     LicensePlate = table.Column<string>(type: "text", nullable: false),
-                    VehicleId = table.Column<int>(type: "integer", nullable: true),
-                    UserId = table.Column<int>(type: "integer", nullable: true),
                     Started = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Stopped = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     DurationMinutes = table.Column<int>(type: "integer", nullable: false),
@@ -61,7 +59,7 @@ namespace v2.Migrations
                 {
                     Transaction = table.Column<string>(type: "text", nullable: false),
                     Id = table.Column<int>(type: "integer", nullable: false),
-                    Amount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    Amount = table.Column<decimal>(type: "numeric", nullable: false),
                     Initiator = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Completed = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -133,7 +131,7 @@ namespace v2.Migrations
                     EndTime = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Status = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    Cost = table.Column<decimal>(type: "numeric(18,2)", nullable: false)
+                    Cost = table.Column<decimal>(type: "numeric", nullable: false)
                 },
                 constraints: table =>
                 {

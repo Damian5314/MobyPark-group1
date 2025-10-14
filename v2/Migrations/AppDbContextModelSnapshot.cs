@@ -22,6 +22,42 @@ namespace v2.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("ParkingSession", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Cost")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("DurationMinutes")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("LicensePlate")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("ParkingLotId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("PaymentStatus")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("Started")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("Stopped")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("ParkingSessions");
+                });
+
             modelBuilder.Entity("Vehicle", b =>
                 {
                     b.Property<int>("Id")
@@ -81,7 +117,7 @@ namespace v2.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<decimal>("DayTariff")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric");
 
                     b.Property<double>("Latitude")
                         .HasColumnType("double precision");
@@ -101,53 +137,11 @@ namespace v2.Migrations
                         .HasColumnType("integer");
 
                     b.Property<decimal>("Tariff")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric");
 
                     b.HasKey("Id");
 
                     b.ToTable("ParkingLots");
-                });
-
-            modelBuilder.Entity("v2.Models.ParkingSession", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("Cost")
-                        .HasColumnType("numeric");
-
-                    b.Property<int>("DurationMinutes")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("LicensePlate")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("ParkingLotId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("PaymentStatus")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("Started")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("Stopped")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int?>("UserId")
-                        .HasColumnType("integer");
-
-                    b.Property<int?>("VehicleId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("ParkingSessions");
                 });
 
             modelBuilder.Entity("v2.Models.Payment", b =>
@@ -157,7 +151,7 @@ namespace v2.Migrations
                         .HasAnnotation("Relational:JsonPropertyName", "transaction");
 
                     b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)")
+                        .HasColumnType("numeric")
                         .HasAnnotation("Relational:JsonPropertyName", "amount");
 
                     b.Property<DateTime>("Completed")
@@ -203,7 +197,7 @@ namespace v2.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Cost")
-                        .HasColumnType("decimal(18,2)");
+                        .HasColumnType("numeric");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");

@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations.Schema; // add this at top
 using Newtonsoft.Json;
 
 public class ParkingSession
@@ -11,7 +12,7 @@ public class ParkingSession
     [JsonProperty("licenseplate")]
     public string LicensePlate { get; set; } = null!;
 
-    // JSON field "user", keep for mapping later
+    [NotMapped]
     [JsonProperty("user")]
     public string Username { get; set; } = null!;
 

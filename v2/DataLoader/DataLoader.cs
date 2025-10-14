@@ -208,65 +208,123 @@ namespace v2.Data
             Console.WriteLine($"✅ Imported {paymentsImported} payments");
 */
 
-           // --- PARKING SESSIONS ---
-            string sessionsFolder = "pdata";
+            // --- PARKING SESSIONS ---
             int importedSessions = 0;
 
-            if (Directory.Exists(sessionsFolder))
+            // Log waar we draaien
+            string baseDir = AppContext.BaseDirectory;
+            Console.WriteLine($"ℹ BaseDirectory: {baseDir}");
+            Console.WriteLine($"ℹ CurrentDirectory: {Directory.GetCurrentDirectory()}");
+
+            // Vind de juiste map ...\data\pdata
+            string? sessionsFolder = null;
             {
-                // Preload all users into a dictionary for mapping username -> UserId
-                var usersDict = context.Users.AsNoTracking().ToDictionary(u => u.Username, u => u.Id);
-
-                var sessionFiles = Directory.GetFiles(sessionsFolder, "p*-sessions.json");
-
-                foreach (var file in sessionFiles)
+                var dir = new DirectoryInfo(baseDir);
+                for (int depth = 0; depth < 25 && dir != null; depth++, dir = dir.Parent)
                 {
-                    var sessions = LoadDataFromFile<ParkingSession>(file);
-
-                    foreach (var s in sessions)
+                    var candidate = Path.Combine(dir.FullName, "data", "pdata");
+                    if (Directory.Exists(candidate))
                     {
-                        s.Id = 0; // reset for EF Core
-                        s.Started = ToUtc(s.Started);
-                        s.Stopped = ToUtc(s.Stopped);
-
-                        // Optional: map user
-                        int? userId = null;
-                        if (!string.IsNullOrEmpty(s.Username) && usersDict.TryGetValue(s.Username, out var uid))
-                        {
-                            userId = uid;
-                        }
-
-                        // Skip duplicates by LicensePlate + Started time
-                        bool exists = context.ParkingSessions.Any(ps =>
-                            ps.LicensePlate == s.LicensePlate &&
-                            ps.Started == s.Started
-                        );
-
-                        if (!exists)
-                        {
-                            context.ParkingSessions.Add(new ParkingSession
-                            {
-                                Id = 0,
-                                ParkingLotId = s.ParkingLotId,
-                                LicensePlate = s.LicensePlate,
-                                Username = s.Username,
-                                Started = s.Started,
-                                Stopped = s.Stopped,
-                                DurationMinutes = s.DurationMinutes,
-                                Cost = s.Cost,
-                                PaymentStatus = s.PaymentStatus
-                            });
-
-                            importedSessions++;
-                        }
+                        sessionsFolder = candidate;
+                        break;
                     }
-
-                    // Save after each file
-                    context.SaveChanges();
                 }
             }
 
-            Console.WriteLine($"✅ Imported {importedSessions} parking sessions");
+            if (sessionsFolder == null)
+            {
+                Console.WriteLine($"❌ Kon map 'data{Path.DirectorySeparatorChar}pdata' niet vinden vanaf {baseDir}.");
+            }
+            else
+            {
+                Console.WriteLine($"✅ Gebruikt map voor parking sessions: {sessionsFolder}");
+
+                const int batchSize = 1000;
+                int pending = 0;
+                bool origDetect = context.ChangeTracker.AutoDetectChangesEnabled;
+                context.ChangeTracker.AutoDetectChangesEnabled = false;
+
+                try
+                {
+                    // ✅ Loop van 1 tot 1500, ook als sommige leeg zijn
+                    for (int i = 1; i <= 1500; i++)
+                    {
+                        string fileName = $"p{i}-sessions.json";
+                        string filePath = Path.Combine(sessionsFolder, fileName);
+
+                        if (!File.Exists(filePath))
+                        {
+                            Console.WriteLine($"⚠ Bestand niet gevonden: {fileName} — overslaan.");
+                            continue; // skip, niet stoppen
+                        }
+
+                        var sessions = LoadDataFromFile<ParkingSession>(filePath);
+
+                        if (sessions == null || sessions.Count == 0)
+                        {
+                            Console.WriteLine($"ℹ Leeg bestand: {fileName} — overslaan.");
+                            continue; // skip, niet stoppen
+                        }
+
+                        Console.WriteLine($"📄 Importeer {sessions.Count} sessies uit {fileName} ...");
+
+                        foreach (var s in sessions)
+                        {
+                            s.Id = 0;
+                            s.Started = ToUtc(s.Started);
+                            s.Stopped = ToUtc(s.Stopped);
+
+                            if (string.IsNullOrWhiteSpace(s.LicensePlate))
+                            {
+                                Console.WriteLine($"⚠ Sla sessie over in {fileName}: ontbrekende LicensePlate");
+                                continue;
+                            }
+
+                            bool exists = context.ParkingSessions
+                                .AsNoTracking()
+                                .Any(ps => ps.LicensePlate == s.LicensePlate && ps.Started == s.Started);
+
+                            if (!exists)
+                            {
+                                context.ParkingSessions.Add(new ParkingSession
+                                {
+                                    Id = 0,
+                                    ParkingLotId = s.ParkingLotId,
+                                    LicensePlate = s.LicensePlate,
+                                    Username = s.Username, // [NotMapped] in model als kolom niet bestaat
+                                    Started = s.Started,
+                                    Stopped = s.Stopped,
+                                    DurationMinutes = s.DurationMinutes,
+                                    Cost = s.Cost,
+                                    PaymentStatus = s.PaymentStatus
+                                });
+
+                                importedSessions++;
+                                pending++;
+
+                                if (pending >= batchSize)
+                                {
+                                    context.SaveChanges();
+                                    pending = 0;
+                                }
+                            }
+                        }
+
+                        if (pending > 0)
+                        {
+                            context.SaveChanges();
+                            pending = 0;
+                        }
+                    }
+                }
+                finally
+                {
+                    context.ChangeTracker.AutoDetectChangesEnabled = origDetect;
+                }
+            }
+
+            Console.WriteLine($"✅ Totaal geïmporteerde parking sessions: {importedSessions}");
+            // --- END PARKING SESSIONS ---
         }
     }
 }
