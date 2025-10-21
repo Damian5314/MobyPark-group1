@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using v2.Models;
 using v2.Services;
@@ -39,6 +40,15 @@ namespace v2.Controllers
                 Token = token,
                 ExpiresAt = DateTime.Now.AddHours(24)
             });
+        }
+
+        [Authorize]
+        [HttpPost("logout")]
+        public IActionResult Logout()
+        {
+            // JWT logout gebeurt client-side door de token te verwijderen
+            // Deze endpoint kan gebruikt worden voor logging of token blacklisting
+            return Ok(new { message = "Logged out successfully" });
         }
     }
 }
