@@ -211,3 +211,7 @@ v1/Workshop - Refactoring/sphinx-example/docs/_build/.DS_Store
 
 v2/data/
 v1/data/
+
+/v2/obj
+/v2/bin
+/v2/obj/debug
