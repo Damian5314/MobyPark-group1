@@ -12,7 +12,7 @@ using v2.Data;
 namespace v2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251105151908_InitialCreate")]
+    [Migration("20251105202028_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
