@@ -63,7 +63,15 @@ namespace v2.Data
 
             // PAYMENT
             modelBuilder.Entity<Payment>()
-                .HasKey(p => p.Transaction);
+                .HasKey(p => p.Id);
+
+            modelBuilder.Entity<Payment>()
+                .Property(p => p.Id)
+                .ValueGeneratedOnAdd(); //generate id
+
+            modelBuilder.Entity<Payment>()
+                .HasIndex(p => p.Transaction)
+                .IsUnique();
         }
     }
 }

@@ -146,9 +146,11 @@ namespace v2.Migrations
 
             modelBuilder.Entity("v2.Models.Payment", b =>
                 {
-                    b.Property<string>("Transaction")
-                        .HasColumnType("text")
-                        .HasAnnotation("Relational:JsonPropertyName", "transaction");
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("numeric")
@@ -167,9 +169,6 @@ namespace v2.Migrations
                         .HasColumnType("text")
                         .HasAnnotation("Relational:JsonPropertyName", "hash");
 
-                    b.Property<int>("Id")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Initiator")
                         .IsRequired()
                         .HasColumnType("text")
@@ -183,7 +182,15 @@ namespace v2.Migrations
                         .HasColumnType("text")
                         .HasAnnotation("Relational:JsonPropertyName", "session_id");
 
-                    b.HasKey("Transaction");
+                    b.Property<string>("Transaction")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasAnnotation("Relational:JsonPropertyName", "transaction");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Transaction")
+                        .IsUnique();
 
                     b.ToTable("Payments");
                 });
