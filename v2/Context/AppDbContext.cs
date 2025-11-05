@@ -72,6 +72,16 @@ namespace v2.Data
             modelBuilder.Entity<Payment>()
                 .HasIndex(p => p.Transaction)
                 .IsUnique();
+
+            modelBuilder.Entity<Payment>()
+                .OwnsOne(p => p.TData, td =>
+                {
+                    td.Property(t => t.Amount).HasColumnName("amount");
+                    td.Property(t => t.Date).HasColumnName("date");
+                    td.Property(t => t.Method).HasColumnName("method");
+                    td.Property(t => t.Issuer).HasColumnName("issuer");
+                    td.Property(t => t.Bank).HasColumnName("bank");
+                });
         }
     }
 }

@@ -65,6 +65,11 @@ namespace v2.Migrations
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Completed = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Hash = table.Column<string>(type: "text", nullable: false),
+                    amount = table.Column<decimal>(type: "numeric", nullable: false),
+                    date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    method = table.Column<string>(type: "text", nullable: false),
+                    issuer = table.Column<string>(type: "text", nullable: false),
+                    bank = table.Column<string>(type: "text", nullable: false),
                     SessionId = table.Column<string>(type: "text", nullable: true),
                     ParkingLotId = table.Column<int>(type: "integer", nullable: true)
                 },

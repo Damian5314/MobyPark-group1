@@ -275,12 +275,13 @@ namespace v2.Data
                         var payment = serializer.Deserialize<Payment>(reader);
                         if (payment == null) continue;
 
+                        // Ensure CreatedAt, Completed, and TData.Date are valid UTC
                         payment.CreatedAt = payment.CreatedAt == DateTime.MinValue ? DateTime.UtcNow : ToUtc(payment.CreatedAt);
                         payment.Completed = payment.Completed == DateTime.MinValue ? DateTime.UtcNow : ToUtc(payment.Completed);
-
-                        if (payment.TData != null && payment.TData.Date != DateTime.MinValue)
+                        if (payment.TData != null)
                             payment.TData.Date = ToUtc(payment.TData.Date);
 
+                        // Skip duplicates
                         if (context.Payments.Any(p => p.Transaction == payment.Transaction)) continue;
 
                         context.Payments.Add(payment);
@@ -388,3 +389,4 @@ namespace v2.Data
         }
     }
 }
+//hello helllo
