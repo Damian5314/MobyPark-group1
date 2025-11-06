@@ -1,5 +1,4 @@
-﻿
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using v2.Data;
@@ -11,7 +10,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql("Host=localhost;Port=5432;Database=mobypark;Username=postgres;Password=postgres"));
 
-// Register Services
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IBillingService, BillingService>();
 builder.Services.AddScoped<IParkingLotService, ParkingLotService>();
@@ -21,14 +19,9 @@ builder.Services.AddScoped<IReservationService, ReservationService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<IVehicleService, VehicleService>();
 
-// Add Controllers
 builder.Services.AddControllers();
 
-// Add Swagger for API testing
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
-// Add CORS if needed
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
@@ -38,9 +31,33 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
 app.Urls.Add("http://localhost:5000");
 
-// Seed data if requested
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+    try
+    {
+        db.Database.OpenConnection();
+        db.Database.CloseConnection();
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine("Database connection successful!");
+    }
+    catch (Exception ex)
+    {
+        Console.ForegroundColor = ConsoleColor.Red;
+        Console.WriteLine("Database connection failed:");
+        Console.WriteLine(ex.Message);
+        Console.ResetColor();
+    }
+    finally
+    {
+        Console.ResetColor();
+    }
+}
+
 if (args.Length > 0 && args[0].ToLower() == "seed")
 {
     using var scope = app.Services.CreateScope();
@@ -50,22 +67,16 @@ if (args.Length > 0 && args[0].ToLower() == "seed")
 }
 else
 {
-    Console.WriteLine("Run `dotnet run seed` to import data into the database.");
-}
-
-// Configure middleware
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
+    Console.WriteLine("ℹRun `dotnet run seed` to import data into the database.");
 }
 
 app.UseHttpsRedirection();
-
 app.UseCors();
-
 app.UseAuthorization();
-
 app.MapControllers();
+
+Console.ForegroundColor = ConsoleColor.Cyan;
+Console.WriteLine($"Server is running at: http://localhost:5000");
+Console.ResetColor();
 
 app.Run();
