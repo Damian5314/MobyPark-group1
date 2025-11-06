@@ -58,6 +58,49 @@ namespace v2.Migrations
                     b.ToTable("ParkingSessions");
                 });
 
+            modelBuilder.Entity("Payment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime>("Completed")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Hash")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Initiator")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("ParkingLotId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("SessionId")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Transaction")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Transaction")
+                        .IsUnique();
+
+                    b.ToTable("Payments");
+                });
+
             modelBuilder.Entity("Vehicle", b =>
                 {
                     b.Property<int>("Id")
@@ -142,50 +185,6 @@ namespace v2.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("ParkingLots");
-                });
-
-            modelBuilder.Entity("v2.Models.Payment", b =>
-                {
-                    b.Property<string>("Transaction")
-                        .HasColumnType("text")
-                        .HasAnnotation("Relational:JsonPropertyName", "transaction");
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("numeric")
-                        .HasAnnotation("Relational:JsonPropertyName", "amount");
-
-                    b.Property<DateTime>("Completed")
-                        .HasColumnType("timestamp with time zone")
-                        .HasAnnotation("Relational:JsonPropertyName", "completed");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasAnnotation("Relational:JsonPropertyName", "created_at");
-
-                    b.Property<string>("Hash")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasAnnotation("Relational:JsonPropertyName", "hash");
-
-                    b.Property<int>("Id")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Initiator")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasAnnotation("Relational:JsonPropertyName", "initiator");
-
-                    b.Property<int?>("ParkingLotId")
-                        .HasColumnType("integer")
-                        .HasAnnotation("Relational:JsonPropertyName", "parking_lot_id");
-
-                    b.Property<string>("SessionId")
-                        .HasColumnType("text")
-                        .HasAnnotation("Relational:JsonPropertyName", "session_id");
-
-                    b.HasKey("Transaction");
-
-                    b.ToTable("Payments");
                 });
 
             modelBuilder.Entity("v2.Models.Reservation", b =>
@@ -275,6 +274,48 @@ namespace v2.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Payment", b =>
+                {
+                    b.OwnsOne("TData", "TData", b1 =>
+                        {
+                            b1.Property<int>("PaymentId")
+                                .HasColumnType("integer");
+
+                            b1.Property<decimal>("Amount")
+                                .HasColumnType("numeric")
+                                .HasColumnName("amount");
+
+                            b1.Property<string>("Bank")
+                                .IsRequired()
+                                .HasColumnType("text")
+                                .HasColumnName("bank");
+
+                            b1.Property<DateTime>("Date")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("date");
+
+                            b1.Property<string>("Issuer")
+                                .IsRequired()
+                                .HasColumnType("text")
+                                .HasColumnName("issuer");
+
+                            b1.Property<string>("Method")
+                                .IsRequired()
+                                .HasColumnType("text")
+                                .HasColumnName("method");
+
+                            b1.HasKey("PaymentId");
+
+                            b1.ToTable("Payments");
+
+                            b1.WithOwner()
+                                .HasForeignKey("PaymentId");
+                        });
+
+                    b.Navigation("TData")
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Vehicle", b =>

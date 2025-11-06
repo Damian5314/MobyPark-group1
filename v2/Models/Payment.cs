@@ -1,57 +1,52 @@
-using System;
-using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
-namespace v2.Models
+public class Payment
 {
-    public class TData
-    {
-        [JsonPropertyName("amount")]
-        public decimal Amount { get; set; }
+    public int Id { get; set; } // EF Core primary key
 
-        [JsonPropertyName("date")]
-        public DateTime Date { get; set; }
+    [JsonProperty("transaction")]
+    public string Transaction { get; set; } = null!;
 
-        [JsonPropertyName("method")]
-        public string Method { get; set; } = null!;
+    [JsonProperty("amount")]
+    public decimal Amount { get; set; }
 
-        [JsonPropertyName("issuer")]
-        public string Issuer { get; set; } = null!;
+    [JsonProperty("initiator")]
+    public string Initiator { get; set; } = null!;
 
-        [JsonPropertyName("bank")]
-        public string Bank { get; set; } = null!;
-    }
+    [JsonProperty("created_at")]
+    public DateTime CreatedAt { get; set; }
 
-    public class Payment
-    {
-        public int Id { get; set; } // EF Core primary key
+    [JsonProperty("completed")]
+    public DateTime Completed { get; set; }
 
-        [JsonPropertyName("transaction")]
-        public string Transaction { get; set; } = null!;
+    [JsonProperty("hash")]
+    public string Hash { get; set; } = null!;
 
-        [JsonPropertyName("amount")]
-        public decimal Amount { get; set; }
+    [JsonProperty("t_data")]
+    public TData TData { get; set; } = new();
 
-        [JsonPropertyName("initiator")]
-        public string Initiator { get; set; } = null!;
+    // Optional, only if they exist in JSON
+    [JsonProperty("session_id")]
+    public string? SessionId { get; set; }
 
-        [JsonPropertyName("created_at")]
-        public DateTime CreatedAt { get; set; }
+    [JsonProperty("parking_lot_id")]
+    public int? ParkingLotId { get; set; }
+}
 
-        [JsonPropertyName("completed")]
-        public DateTime Completed { get; set; }
+public class TData
+{
+    [JsonProperty("amount")]
+    public decimal Amount { get; set; }
 
-        [JsonPropertyName("hash")]
-        public string Hash { get; set; } = null!;
+    [JsonProperty("date")]
+    public DateTime Date { get; set; }
 
-        [NotMapped] 
-        [JsonPropertyName("t_data")]
-        public TData TData { get; set; } = new();
+    [JsonProperty("method")]
+    public string Method { get; set; } = null!;
 
-        [JsonPropertyName("session_id")]
-        public string? SessionId { get; set; }
+    [JsonProperty("issuer")]
+    public string Issuer { get; set; } = null!;
 
-        [JsonPropertyName("parking_lot_id")]
-        public int? ParkingLotId { get; set; }
-    }
+    [JsonProperty("bank")]
+    public string Bank { get; set; } = null!;
 }

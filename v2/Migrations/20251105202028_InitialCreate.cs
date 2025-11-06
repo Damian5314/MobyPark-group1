@@ -7,7 +7,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace v2.Migrations
 {
     /// <inheritdoc />
-    public partial class m1 : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -57,19 +57,25 @@ namespace v2.Migrations
                 name: "Payments",
                 columns: table => new
                 {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Transaction = table.Column<string>(type: "text", nullable: false),
-                    Id = table.Column<int>(type: "integer", nullable: false),
                     Amount = table.Column<decimal>(type: "numeric", nullable: false),
                     Initiator = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Completed = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     Hash = table.Column<string>(type: "text", nullable: false),
+                    amount = table.Column<decimal>(type: "numeric", nullable: false),
+                    date = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    method = table.Column<string>(type: "text", nullable: false),
+                    issuer = table.Column<string>(type: "text", nullable: false),
+                    bank = table.Column<string>(type: "text", nullable: false),
                     SessionId = table.Column<string>(type: "text", nullable: true),
                     ParkingLotId = table.Column<int>(type: "integer", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Payments", x => x.Transaction);
+                    table.PrimaryKey("PK_Payments", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -155,6 +161,12 @@ namespace v2.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Payments_Transaction",
+                table: "Payments",
+                column: "Transaction",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Reservations_ParkingLotId",
