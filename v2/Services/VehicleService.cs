@@ -73,7 +73,7 @@ namespace v2.Services
             return existing;
         }
 
-        //delete
+        //delete vehicle
         public async Task<bool> DeleteAsync(int id)
         {
             var vehicle = await _context.Vehicles.FirstOrDefaultAsync(v => v.Id == id);
