@@ -28,7 +28,7 @@ Content-Type: application/json
 ### BILLING ###
 #######################################################################
 
-### Get 50 billing summaries
+### Get 100 billing summaries
 GET http://localhost:5000/api/billing
 
 ###
@@ -306,7 +306,7 @@ GET http://localhost:5000/api/vehicle
 ###
 
 ### Get specific vehicle
-GET http://localhost:5000/api/vehicle/1
+GET http://localhost:5000/api/vehicle/14211
 
 ###
 
@@ -331,14 +331,14 @@ Content-Type: application/json
 ###
 
 ### Update vehicle
-PUT http://localhost:5000/api/vehicle/1
+PUT http://localhost:5000/api/vehicle/14211
 Content-Type: application/json
 
 {
   "userId": 1,
   "licensePlate": "XYZ123",
   "make": "Toyota",
-  "model": "Corolla",
+  "model": "CorollaTest",
   "color": "Red",
   "year": 2023
 }
@@ -346,4 +346,4 @@ Content-Type: application/json
 ###
 
 ### Delete vehicle
-DELETE http://localhost:5000/api/vehicle/1
+DELETE http://localhost:5000/api/vehicle/14211

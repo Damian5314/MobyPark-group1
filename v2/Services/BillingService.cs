@@ -13,10 +13,9 @@ namespace v2.Services
             _context = context;
         }
 
-        // Get billing by user ID
+        //by userid
         public async Task<Billing?> GetByUserIdAsync(int userId)
         {
-            // Fetch the user from the Users table
             var user = await _context.Users
                 .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Id == userId);
@@ -24,7 +23,7 @@ namespace v2.Services
             if (user == null)
                 return null;
 
-            // Fetch payments for this user
+            //payments per user
             var payments = await _context.Payments
                 .AsNoTracking()
                 .Where(p => p.Initiator == user.Username)
@@ -40,7 +39,6 @@ namespace v2.Services
             };
         }
 
-        // Get all billing summaries (up to 50)
         public async Task<IEnumerable<Billing>> GetAllAsync()
         {
             var groupedBillings = await _context.Payments

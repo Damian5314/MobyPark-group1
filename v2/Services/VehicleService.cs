@@ -1,3 +1,6 @@
+using Microsoft.EntityFrameworkCore;
+using v2.Data;
+using v2.Models;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -6,34 +9,55 @@ namespace v2.Services
 {
     public class VehicleService : IVehicleService
     {
-        private readonly List<Vehicle> _vehicles = new();
+        private readonly AppDbContext _context;
 
+        public VehicleService(AppDbContext context)
+        {
+            _context = context;
+        }
+
+        //all vehicles
         public async Task<IEnumerable<Vehicle>> GetAllAsync()
         {
-            return _vehicles;
+            return await _context.Vehicles
+                .AsNoTracking()
+                .Take(50)
+                .ToListAsync();
+
         }
 
+        //vehicle by id
         public async Task<Vehicle?> GetByIdAsync(int id)
         {
-            return _vehicles.FirstOrDefault(v => v.Id == id);
+            return await _context.Vehicles
+                .AsNoTracking()
+                .FirstOrDefaultAsync(v => v.Id == id);
         }
 
+        //by user id
         public async Task<IEnumerable<Vehicle>> GetByUserIdAsync(int userId)
         {
-            return _vehicles.Where(v => v.UserId == userId);
+            return await _context.Vehicles
+                .AsNoTracking()
+                .Where(v => v.UserId == userId)
+                .ToListAsync();
         }
 
+        //new vehicle
         public async Task<Vehicle> CreateAsync(Vehicle vehicle)
         {
-            vehicle.Id = _vehicles.Count + 1;
             vehicle.CreatedAt = DateTime.UtcNow;
-            _vehicles.Add(vehicle);
+
+            _context.Vehicles.Add(vehicle);
+            await _context.SaveChangesAsync();
+
             return vehicle;
         }
 
+        //update vehicle
         public async Task<Vehicle> UpdateAsync(int id, Vehicle updated)
         {
-            var existing = _vehicles.FirstOrDefault(v => v.Id == id);
+            var existing = await _context.Vehicles.FirstOrDefaultAsync(v => v.Id == id);
             if (existing == null)
                 throw new KeyNotFoundException("Vehicle not found.");
 
@@ -43,15 +67,21 @@ namespace v2.Services
             existing.Color = updated.Color;
             existing.Year = updated.Year;
 
+            _context.Vehicles.Update(existing);
+            await _context.SaveChangesAsync();
+
             return existing;
         }
 
+        //delete
         public async Task<bool> DeleteAsync(int id)
         {
-            var vehicle = _vehicles.FirstOrDefault(v => v.Id == id);
+            var vehicle = await _context.Vehicles.FirstOrDefaultAsync(v => v.Id == id);
             if (vehicle == null) return false;
 
-            _vehicles.Remove(vehicle);
+            _context.Vehicles.Remove(vehicle);
+            await _context.SaveChangesAsync();
+
             return true;
         }
     }
