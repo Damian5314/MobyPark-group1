@@ -1,0 +1,226 @@
+### AUTHENTICATION ###
+
+POST http://localhost:5000/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "johndoe",
+  "password": "Password123!",
+  "name": "John Doe",
+  "email": "john@example.com"
+}
+
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "johndoe",
+  "password": "Password123!"
+}
+
+### BILLING ###
+
+GET http://localhost:5000/api/billing
+
+GET http://localhost:5000/api/billing/johndoe
+
+### PARKING LOT ###
+
+GET http://localhost:5000/api/parkinglot
+
+GET http://localhost:5000/api/parkinglot/1
+
+POST http://localhost:5000/api/parkinglot
+Content-Type: application/json
+
+{
+  "name": "Lot A",
+  "location": "Center City",
+  "address": "123 Main St",
+  "capacity": 50,
+  "reserved": 0,
+  "tariff": 1.5,
+  "dayTariff": 15,
+  "coordinates": { "lat": 52.1, "lng": 5.1 }
+}
+
+PUT http://localhost:5000/api/parkinglot/1
+Content-Type: application/json
+
+{
+  "name": "Lot A Updated",
+  "location": "Center City",
+  "address": "123 Main St",
+  "capacity": 55,
+  "reserved": 5,
+  "tariff": 2,
+  "dayTariff": 20,
+  "coordinates": { "lat": 52.1, "lng": 5.1 }
+}
+
+DELETE http://localhost:5000/api/parkinglot/1
+
+POST http://localhost:5000/api/parkinglot/1/sessions/start?licensePlate=ABC123&username=johndoe
+
+POST http://localhost:5000/api/parkinglot/1/sessions/stop?licensePlate=ABC123&username=johndoe
+
+GET http://localhost:5000/api/parkinglot/1/sessions
+
+DELETE http://localhost:5000/api/parkinglot/sessions/1
+
+### PARKING SESSION ###
+
+GET http://localhost:5000/api/parkingsession
+
+GET http://localhost:5000/api/parkingsession/1
+
+GET http://localhost:5000/api/parkingsession/user/johndoe
+
+POST http://localhost:5000/api/parkingsession/start
+Content-Type: application/json
+
+{
+  "parkingLotId": 1,
+  "licensePlate": "ABC123",
+  "username": "johndoe"
+}
+
+POST http://localhost:5000/api/parkingsession/stop/1
+
+DELETE http://localhost:5000/api/parkingsession/1
+
+### PAYMENT ###
+
+GET http://localhost:5000/api/payment
+
+GET http://localhost:5000/api/payment/1
+
+GET http://localhost:5000/api/payment/initiator/johndoe
+
+POST http://localhost:5000/api/payment
+Content-Type: application/json
+
+{
+  "transaction": "TX123",
+  "amount": 10.5,
+  "initiator": "johndoe",
+  "createdAt": "2025-11-05T10:00:00Z",
+  "completed": "2025-11-05T10:05:00Z",
+  "hash": "abc123",
+  "tData": {
+    "amount": 10.5,
+    "date": "2025-11-05T10:00:00Z",
+    "method": "Credit Card",
+    "issuer": "Visa",
+    "bank": "Bank A"
+  },
+  "parkingLotId": 1
+}
+
+DELETE http://localhost:5000/api/payment/1
+
+### RESERVATION ###
+
+GET http://localhost:5000/api/reservation
+
+GET http://localhost:5000/api/reservation/1
+
+POST http://localhost:5000/api/reservation
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "parkingLotId": 1,
+  "vehicleId": 1,
+  "startTime": "2025-11-05T09:00:00Z",
+  "endTime": "2025-11-05T11:00:00Z",
+  "status": "Pending",
+  "cost": 5
+}
+
+PUT http://localhost:5000/api/reservation/1
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "parkingLotId": 1,
+  "vehicleId": 1,
+  "startTime": "2025-11-05T09:00:00Z",
+  "endTime": "2025-11-05T12:00:00Z",
+  "status": "Confirmed",
+  "cost": 7
+}
+
+DELETE http://localhost:5000/api/reservation/1
+
+GET http://localhost:5000/api/reservation/user/1
+
+### USER PROFILE ###
+
+GET http://localhost:5000/api/userprofile
+
+GET http://localhost:5000/api/userprofile/johndoe
+
+POST http://localhost:5000/api/userprofile
+Content-Type: application/json
+
+{
+  "username": "janedoe",
+  "password": "Password123!",
+  "name": "Jane Doe",
+  "email": "jane@example.com",
+  "phone": "1234567890",
+  "birthYear": 1990,
+  "active": true,
+  "role": "USER"
+}
+
+PUT http://localhost:5000/api/userprofile/janedoe
+Content-Type: application/json
+
+{
+  "username": "janedoe",
+  "password": "Password123!",
+  "name": "Jane Doe Updated",
+  "email": "jane@example.com",
+  "phone": "1234567890",
+  "birthYear": 1990,
+  "active": true,
+  "role": "USER"
+}
+
+DELETE http://localhost:5000/api/userprofile/janedoe
+
+### VEHICLE ###
+
+GET http://localhost:5000/api/vehicle
+
+GET http://localhost:5000/api/vehicle/1
+
+GET http://localhost:5000/api/vehicle/user/1
+
+POST http://localhost:5000/api/vehicle
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "licensePlate": "XYZ123",
+  "make": "Toyota",
+  "model": "Corolla",
+  "color": "Blue",
+  "year": 2022
+}
+
+PUT http://localhost:5000/api/vehicle/1
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "licensePlate": "XYZ123",
+  "make": "Toyota",
+  "model": "Corolla",
+  "color": "Red",
+  "year": 2023
+}
+
+DELETE http://localhost:5000/api/vehicle/1
