@@ -51,7 +51,7 @@ namespace v2.Services
                     User = g.Key,
                     Payments = g.ToList()
                 })
-                .Take(1000)
+                .Take(50)
                 .ToListAsync();
 
             return groupedBillings;
