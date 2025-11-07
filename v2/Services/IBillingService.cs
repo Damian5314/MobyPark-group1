@@ -6,7 +6,7 @@ namespace v2.Services
 {
     public interface IBillingService
     {
-        Task<Billing?> GetByUserAsync(string username);
+        Task<Billing?> GetByUserIdAsync(int userId);
         Task<IEnumerable<Billing>> GetAllAsync();
     }
 }

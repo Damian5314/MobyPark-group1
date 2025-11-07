@@ -1,42 +1,60 @@
+using Microsoft.EntityFrameworkCore;
+using v2.Data;
 using v2.Models;
 
 namespace v2.Services
 {
     public class BillingService : IBillingService
     {
-        private readonly IPaymentService _paymentService;
+        private readonly AppDbContext _context;
 
-        public BillingService(IPaymentService paymentService)
+        public BillingService(AppDbContext context)
         {
-            _paymentService = paymentService;
+            _context = context;
         }
 
-        public async Task<Billing?> GetByUserAsync(string username)
+        // Get billing by user ID
+        public async Task<Billing?> GetByUserIdAsync(int userId)
         {
-            var payments = await _paymentService.GetByInitiatorAsync(username);
-            if (payments == null || !payments.Any())
+            // Fetch the user from the Users table
+            var user = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Id == userId);
+
+            if (user == null)
+                return null;
+
+            // Fetch payments for this user
+            var payments = await _context.Payments
+                .AsNoTracking()
+                .Where(p => p.Initiator == user.Username)
+                .ToListAsync();
+
+            if (!payments.Any())
                 return null;
 
             return new Billing
             {
-                User = username,
-                Payments = payments.ToList()
+                User = user.Username,
+                Payments = payments
             };
         }
 
+        // Get all billing summaries (up to 50)
         public async Task<IEnumerable<Billing>> GetAllAsync()
         {
-            var allPayments = await _paymentService.GetAllAsync();
-
-            var grouped = allPayments
+            var groupedBillings = await _context.Payments
+                .AsNoTracking()
                 .GroupBy(p => p.Initiator)
                 .Select(g => new Billing
                 {
                     User = g.Key,
                     Payments = g.ToList()
-                });
+                })
+                .Take(50)
+                .ToListAsync();
 
-            return grouped;
+            return groupedBillings;
         }
     }
 }
