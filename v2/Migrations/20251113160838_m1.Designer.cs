@@ -12,8 +12,8 @@ using v2.Data;
 namespace v2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251105202028_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20251113160838_m1")]
+    partial class m1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

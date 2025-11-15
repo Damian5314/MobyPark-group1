@@ -2,14 +2,15 @@ using v2.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace v2.Services
+public interface IUserProfileService
 {
-    public interface IUserProfileService
-    {
-        Task<UserProfile?> GetByUsernameAsync(string username);
-        Task<IEnumerable<UserProfile>> GetAllAsync();
-        Task<UserProfile> CreateAsync(UserProfile profile);
-        Task<UserProfile?> UpdateAsync(string username, UserProfile profile);
-        Task<bool> DeleteAsync(string username);
-    }
+    Task<UserProfile?> GetByUsernameAsync(string username);
+    Task<UserProfile?> GetByIdAsync(int id);
+    Task<IEnumerable<UserProfile>> GetAllAsync();
+    Task<UserProfile?> UpdateAsync(string username, UserProfile profile);
+
+    // NEW:
+    Task<bool> ChangePasswordAsync(string username, string currentPassword, string newPassword); // user changing own password
+    Task<bool> SetPasswordAsync(string username, string newPassword); // admin reset
+    Task<bool> DeleteAsync(string username);
 }

@@ -6,6 +6,9 @@ namespace v2.Models
         public string Password { get; set; } = null!;
         public string Name { get; set; } = null!;
         public string? Email { get; set; }
+
+        public string Phone { get; set; } = null!;  
+        public int BirthYear { get; set; }          
     }
 
     public class LoginRequest
@@ -18,5 +21,6 @@ namespace v2.Models
     {
         public string Token { get; set; } = null!;
         public DateTime ExpiresAt { get; set; }
+        
     }
 }

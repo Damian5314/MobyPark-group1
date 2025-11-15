@@ -21,7 +21,7 @@ namespace v2.Controllers
             try
             {
                 var response = await _authService.RegisterAsync(request);
-                return Ok(response);
+                return Ok("Registered and Logged in successfully.");
             }
             catch (Exception ex)
             {

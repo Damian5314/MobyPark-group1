@@ -6,16 +6,14 @@ using v2.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
+
 // Add DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql("Host=localhost;Port=5432;Database=mobypark;Username=postgres;Password=postgres"));
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IBillingService, BillingService>();
-builder.Services.AddScoped<IParkingLotService, ParkingLotService>();
-builder.Services.AddScoped<IParkingSessionService, ParkingSessionService>();
-builder.Services.AddScoped<IPaymentService, PaymentService>();
-builder.Services.AddScoped<IReservationService, ReservationService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<IVehicleService, VehicleService>();
 
@@ -80,3 +78,5 @@ Console.WriteLine($"Server is running at: http://localhost:5000");
 Console.ResetColor();
 
 app.Run();
+
+public partial class Program { }

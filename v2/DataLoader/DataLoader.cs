@@ -108,7 +108,7 @@ namespace v2.Data
             }
         }
 
-        // Stream reservations safely and fix string IDs
+        // Reservations
         public static IEnumerable<Reservation> StreamReservationsFromFile(string filePath)
         {
             if (!File.Exists(filePath)) yield break;
