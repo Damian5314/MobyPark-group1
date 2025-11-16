@@ -14,10 +14,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // ---------------------------------------------------------
 // SERVICES
 // ---------------------------------------------------------
-builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddSingleton<IAuthService, AuthService>();
 builder.Services.AddScoped<IBillingService, BillingService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<IVehicleService, VehicleService>();
+builder.Services.AddTransient<TokenAuthHandler>();
 
 // ---------------------------------------------------------
 // AUTHENTICATION (Custom Token Authentication)

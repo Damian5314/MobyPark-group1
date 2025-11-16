@@ -1,4 +1,3 @@
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using v2.Models;
 using v2.Services;
@@ -7,126 +6,91 @@ namespace v2.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
     public class UserProfileController : ControllerBase
     {
         private readonly IUserProfileService _userService;
+        private readonly IAuthService _authService;
 
-        public UserProfileController(IUserProfileService userService)
+        public UserProfileController(IUserProfileService userService, IAuthService authService)
         {
             _userService = userService;
+            _authService = authService;
         }
 
-        // ADMIN ONLY: GET ALL USERS
-        [HttpGet]
-        [Authorize(Roles = "ADMIN")]
-        public async Task<IActionResult> GetAll()
+        // HELPER: Get username from token
+        private string? GetLoggedInUsername()
         {
-            var users = await _userService.GetAllAsync();
-            return Ok(users);
+            var authHeader = Request.Headers["Authorization"].ToString();
+
+            if (string.IsNullOrWhiteSpace(authHeader) || !authHeader.StartsWith("Bearer "))
+                return null;
+
+            var token = authHeader.Replace("Bearer ", "");
+
+            if (!_authService.IsTokenValid(token))
+                return null;
+
+            return _authService.GetUsernameFromToken(token);
         }
 
-        // GET PROFILE
-        // Admin → can get anyone
-        // User  → can get only their own
+        private bool IsAdmin(string username)
+        {
+            var user = _userService.GetByUsernameAsync(username).Result;
+            return user != null && user.Role == "ADMIN";
+        }
+
+        // USER: GET OWN PROFILE
+        // GET /api/UserProfile/me
+        [HttpGet("me")]
+        public async Task<IActionResult> GetOwnProfile()
+        {
+            var loggedIn = GetLoggedInUsername();
+            if (loggedIn == null)
+                return Unauthorized("Invalid or expired token.");
+
+            var user = await _userService.GetByUsernameAsync(loggedIn);
+            return user == null ? NotFound() : Ok(user);
+        }
+
+        // ADMIN: GET ANY USER PROFILE
+        // GET /api/UserProfile/{username}
         [HttpGet("{username}")]
-        public async Task<IActionResult> GetByUsername(string username)
+        public async Task<IActionResult> GetUserProfile(string username)
         {
-            var currentUsername = User.Identity?.Name;
-            var isAdmin = User.IsInRole("ADMIN");
+            var loggedIn = GetLoggedInUsername();
+            if (loggedIn == null)
+                return Unauthorized("Invalid or expired token.");
 
-            if (!isAdmin && !string.Equals(currentUsername, username, StringComparison.OrdinalIgnoreCase))
+            if (!IsAdmin(loggedIn))
                 return Forbid();
 
             var user = await _userService.GetByUsernameAsync(username);
             return user == null ? NotFound() : Ok(user);
         }
 
-        // UPDATE PROFILE (NO PASSWORD HERE)
-        // Admin → can update anyone fully
-        // User  → can update only their own and CANNOT change Role/Active
-        [HttpPut("{username}")]
-        public async Task<IActionResult> Update(string username, [FromBody] UserProfile profile)
+        // USER: DELETE OWN PROFILE
+        // DELETE /api/UserProfile/me
+        [HttpDelete("me")]
+        public async Task<IActionResult> DeleteOwnProfile()
         {
-            var currentUsername = User.Identity?.Name;
-            var isAdmin = User.IsInRole("ADMIN");
+            var loggedIn = GetLoggedInUsername();
+            if (loggedIn == null)
+                return Unauthorized("Invalid or expired token.");
 
-            if (!isAdmin && !string.Equals(currentUsername, username, StringComparison.OrdinalIgnoreCase))
-                return Forbid();
-
-            var existing = await _userService.GetByUsernameAsync(username);
-            if (existing == null)
-                return NotFound();
-
-            // Build safe update object
-            var safeUpdate = new UserProfile
-            {
-                Id = existing.Id,
-                Username = existing.Username,
-                Password = existing.Password,  // not changed here
-
-                Name = profile.Name,
-                Email = profile.Email,
-                Phone = profile.Phone,
-                BirthYear = profile.BirthYear,
-
-                CreatedAt = existing.CreatedAt,
-
-                // Only admin can change role / active
-                Role = isAdmin ? profile.Role : existing.Role,
-                Active = isAdmin ? profile.Active : existing.Active
-            };
-
-            var updated = await _userService.UpdateAsync(username, safeUpdate);
-            return Ok(updated);
+            var deleted = await _userService.DeleteAsync(loggedIn);
+            return deleted ? NoContent() : NotFound();
         }
 
-        // CHANGE PASSWORD
-        // User → can change their own (must provide current pw)
-        // Admin → can reset any user's password
-        [HttpPut("{username}/password")]
-        public async Task<IActionResult> ChangePassword(
-            string username,
-            [FromBody] ChangePasswordRequest request)
-        {
-            var currentUsername = User.Identity?.Name;
-            var isAdmin = User.IsInRole("ADMIN");
-
-            // Only admin or owner
-            if (!isAdmin && !string.Equals(currentUsername, username, StringComparison.OrdinalIgnoreCase))
-                return Forbid();
-
-            // Owner or non-admin: must provide current password
-            if (string.Equals(currentUsername, username, StringComparison.OrdinalIgnoreCase) || !isAdmin)
-            {
-                if (string.IsNullOrWhiteSpace(request.CurrentPassword))
-                    return BadRequest("Current password is required.");
-
-                var result = await _userService.ChangePasswordAsync(username, request.CurrentPassword, request.NewPassword);
-                if (!result)
-                    return BadRequest("Incorrect current password.");
-
-                return NoContent();
-            }
-
-            // Admin resetting someone else's password
-            var resetResult = await _userService.SetPasswordAsync(username, request.NewPassword);
-            if (!resetResult)
-                return NotFound();
-
-            return NoContent();
-        }
-
-        // DELETE PROFILE
-        // Admin → can delete anyone
-        // User  → can delete only their own
+        // ADMIN: DELETE ANY USER
+        // DELETE /api/UserProfile/{username}
         [HttpDelete("{username}")]
-        public async Task<IActionResult> Delete(string username)
+        public async Task<IActionResult> DeleteUser(string username)
         {
-            var currentUsername = User.Identity?.Name;
-            var isAdmin = User.IsInRole("ADMIN");
+            var loggedIn = GetLoggedInUsername();
+            if (loggedIn == null)
+                return Unauthorized("Invalid or expired token.");
 
-            if (!isAdmin && !string.Equals(currentUsername, username, StringComparison.OrdinalIgnoreCase))
+            if (!IsAdmin(loggedIn))
                 return Forbid();
 
             var deleted = await _userService.DeleteAsync(username);

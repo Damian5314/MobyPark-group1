@@ -11,10 +11,10 @@ namespace v2.Services
     {
         private readonly AppDbContext _db;
 
-        // token -> username
+        // token → username
         private readonly Dictionary<string, string> _sessions = new();
 
-        // username -> token
+        // username → token
         private readonly Dictionary<string, string> _userSessions = new();
 
         public AuthService(AppDbContext db)
@@ -22,7 +22,9 @@ namespace v2.Services
             _db = db;
         }
 
+        // ---------------------------------------------------------
         // REGISTER
+        // ---------------------------------------------------------
         public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
         {
             if (await _db.Users.AnyAsync(u => u.Username == request.Username))
@@ -51,8 +53,17 @@ namespace v2.Services
             _db.Users.Add(user);
             await _db.SaveChangesAsync();
 
+            // Create new session token
             var token = GenerateToken(user.Username);
 
+            // Remove old session if exists
+            if (_userSessions.TryGetValue(user.Username, out var oldToken))
+            {
+                _sessions.Remove(oldToken);
+                _userSessions.Remove(user.Username);
+            }
+
+            // Store session
             _sessions[token] = user.Username;
             _userSessions[user.Username] = token;
 
@@ -63,7 +74,9 @@ namespace v2.Services
             };
         }
 
+        // ---------------------------------------------------------
         // LOGIN
+        // ---------------------------------------------------------
         public async Task<AuthResponse> LoginAsync(LoginRequest request)
         {
             var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == request.Username);
@@ -71,9 +84,12 @@ namespace v2.Services
             if (user == null || !PasswordHelper.VerifyPassword(request.Password, user.Password))
                 throw new UnauthorizedAccessException("Invalid username or password.");
 
-            // Prevent double login
-            if (_userSessions.ContainsKey(user.Username))
-                throw new InvalidOperationException("User is already logged in.");
+            // Ensure only one session per user
+            if (_userSessions.TryGetValue(user.Username, out var oldToken))
+            {
+                _sessions.Remove(oldToken);
+                _userSessions.Remove(user.Username);
+            }
 
             var token = GenerateToken(user.Username);
 
@@ -87,21 +103,32 @@ namespace v2.Services
             };
         }
 
+        // ---------------------------------------------------------
         // LOGOUT
-        public async Task LogoutAsync(string token)
+        // ---------------------------------------------------------
+        public async Task<bool> LogoutAsync(string token)
         {
             if (!_sessions.ContainsKey(token))
-                return;
+                return false;
 
             var username = _sessions[token];
+
+            // only accept the current token
+            if (!_userSessions.TryGetValue(username, out var currentToken))
+                return false;
+
+            if (currentToken != token)
+                return false;
 
             _sessions.Remove(token);
             _userSessions.Remove(username);
 
-            await Task.CompletedTask;
+            return true;
         }
 
+        // ---------------------------------------------------------
         // GET USERNAME FROM TOKEN
+        // ---------------------------------------------------------
         public string? GetUsernameFromToken(string token)
         {
             return _sessions.TryGetValue(token, out var username)
@@ -109,15 +136,31 @@ namespace v2.Services
                 : null;
         }
 
+        // ---------------------------------------------------------
         // IS TOKEN VALID?
+        // ---------------------------------------------------------
         public bool IsTokenValid(string token)
         {
             return _sessions.ContainsKey(token);
         }
 
+        // ---------------------------------------------------------
+        // GET ACTIVE USER TOKEN (optional)
+        // ---------------------------------------------------------
+        public string? GetActiveTokenForUser(string username)
+        {
+            return _userSessions.TryGetValue(username, out var token)
+                ? token
+                : null;
+        }
+
+        // ---------------------------------------------------------
         // TOKEN GENERATOR
+        // ---------------------------------------------------------
         private static string GenerateToken(string username)
-            => Convert.ToBase64String(Guid.NewGuid().ToByteArray()) + username;
+        {
+            return Convert.ToBase64String(Guid.NewGuid().ToByteArray()) + username;
+        }
     }
 }
 

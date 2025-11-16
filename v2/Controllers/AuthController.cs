@@ -26,8 +26,7 @@ namespace v2.Controllers
                 return Ok(new
                 {
                     message = "Registered and logged in successfully.",
-                    token = response.Token,
-                    expiresAt = response.ExpiresAt
+                    token = response.Token
                 });
             }
             catch (Exception ex)
@@ -47,8 +46,7 @@ namespace v2.Controllers
                 return Ok(new
                 {
                     message = "Logged in successfully.",
-                    token = response.Token,
-                    expiresAt = response.ExpiresAt
+                    token = response.Token
                 });
             }
             catch (InvalidOperationException ex)
@@ -61,18 +59,24 @@ namespace v2.Controllers
             }
         }
 
-        // LOGOUT token must be sent in Authorization header
+        // LOGOUT (token required in HEADER)
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
-            var token = Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+            var authHeader = Request.Headers["Authorization"].ToString();
 
-            if (string.IsNullOrWhiteSpace(token))
-                return BadRequest(new { error = "Missing token." });
+            if (string.IsNullOrWhiteSpace(authHeader) || !authHeader.StartsWith("Bearer "))
+                return Unauthorized("Missing or invalid token.");
 
-            await _authService.LogoutAsync(token);
+            var token = authHeader.Substring("Bearer ".Length).Trim();
+
+            bool success = await _authService.LogoutAsync(token);
+
+            if (!success)
+                return Unauthorized("Invalid or expired token.");
 
             return Ok(new { message = "Logged out successfully." });
         }
+
     }
 }

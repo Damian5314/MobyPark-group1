@@ -31,15 +31,25 @@ public class TokenAuthHandler : AuthenticationHandler<AuthenticationSchemeOption
 
         var token = header.Replace("Bearer ", "");
 
+        // Step 1: token must exist
+        if (!_authService.IsTokenValid(token))
+            return Task.FromResult(AuthenticateResult.Fail("Invalid or expired token."));
+
+        // Step 2: get username
         var username = _authService.GetUsernameFromToken(token);
         if (username == null)
             return Task.FromResult(AuthenticateResult.Fail("Invalid or expired token."));
 
-        // Build ClaimsIdentity
+        // Step 3: token must match user's active token
+        var activeToken = _authService.GetActiveTokenForUser(username);
+        if (activeToken != token)
+            return Task.FromResult(AuthenticateResult.Fail("Expired session or logged out."));
+
+        // Build claims
         var claims = new[]
         {
             new Claim(ClaimTypes.Name, username),
-            new Claim(ClaimTypes.Role, "USER") // You can load real role from DB if needed
+            new Claim(ClaimTypes.Role, "USER") // Later you can load actual role
         };
 
         var identity = new ClaimsIdentity(claims, Scheme.Name);
