@@ -46,6 +46,26 @@ namespace v2.Controllers
             return user == null ? NotFound() : Ok(user);
         }
 
+        [HttpPut("me")]
+        public async Task<IActionResult> UpdateOwnProfile([FromBody] UserProfile updateRequest)
+        {
+            var loggedIn = GetLoggedInUser();
+            if (loggedIn == null)
+                return Unauthorized(new { error = "Missing or invalid token." });
+
+            var updated = await _userService.UpdateAsync(loggedIn, updateRequest);
+
+            if (updated == null)
+                return NotFound(new { error = "Profile not found." });
+
+            return Ok(new
+            {
+                message = "Profile updated successfully.",
+                profile = updated
+            });
+
+        }
+
 
         // GET /api/UserProfile/{username}  (ADMIN ONLY)
         [HttpGet("{username}")]
