@@ -1,31 +1,41 @@
+using Microsoft.EntityFrameworkCore;
+using v2.Data;
 using v2.Models;
 using v2.Security;
-
 
 namespace v2.Services
 {
     public class UserProfileService : IUserProfileService
     {
-        private readonly List<UserProfile> _users = new();
+        private readonly AppDbContext _db;
 
+        public UserProfileService(AppDbContext db)
+        {
+            _db = db;
+        }
+
+        // GET USER BY USERNAME
         public async Task<UserProfile?> GetByUsernameAsync(string username)
         {
-            return _users.FirstOrDefault(u => u.Username == username);
+            return await _db.Users.FirstOrDefaultAsync(u => u.Username == username);
         }
 
+        // GET USER BY ID
         public async Task<UserProfile?> GetByIdAsync(int id)
         {
-            return _users.FirstOrDefault(u => u.Id == id);
+            return await _db.Users.FindAsync(id);
         }
 
+        // GET ALL USERS
         public async Task<IEnumerable<UserProfile>> GetAllAsync()
         {
-            return _users;
+            return await _db.Users.ToListAsync();
         }
 
+        // UPDATE USER
         public async Task<UserProfile?> UpdateAsync(string username, UserProfile profile)
         {
-            var existing = _users.FirstOrDefault(u => u.Username == username);
+            var existing = await _db.Users.FirstOrDefaultAsync(u => u.Username == username);
             if (existing == null) return null;
 
             existing.Name = profile.Name;
@@ -35,41 +45,46 @@ namespace v2.Services
             existing.BirthYear = profile.BirthYear;
             existing.Active = profile.Active;
 
-
+            await _db.SaveChangesAsync();
             return existing;
         }
 
+        // CHANGE PASSWORD (USER)
         public async Task<bool> ChangePasswordAsync(string username, string currentPassword, string newPassword)
         {
-            var existing = _users.FirstOrDefault(u => u.Username == username);
+            var existing = await _db.Users.FirstOrDefaultAsync(u => u.Username == username);
             if (existing == null) return false;
 
-            // Check current password
             if (!PasswordHelper.VerifyPassword(currentPassword, existing.Password))
-            {
                 return false;
-            }
 
-            // Set new hashed password
             existing.Password = PasswordHelper.HashPassword(newPassword);
+            await _db.SaveChangesAsync();
+
             return true;
         }
 
+        // SET PASSWORD (ADMIN)
         public async Task<bool> SetPasswordAsync(string username, string newPassword)
         {
-            var existing = _users.FirstOrDefault(u => u.Username == username);
+            var existing = await _db.Users.FirstOrDefaultAsync(u => u.Username == username);
             if (existing == null) return false;
 
             existing.Password = PasswordHelper.HashPassword(newPassword);
+            await _db.SaveChangesAsync();
+
             return true;
         }
 
+        // DELETE USER
         public async Task<bool> DeleteAsync(string username)
         {
-            var existing = _users.FirstOrDefault(u => u.Username == username);
-            if (existing == null) return false;
+            var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == username);
+            if (user == null) return false;
 
-            _users.Remove(existing);
+            _db.Users.Remove(user);
+            await _db.SaveChangesAsync();
+
             return true;
         }
     }

@@ -17,81 +17,75 @@ namespace v2.Controllers
             _authService = authService;
         }
 
-        // HELPER: Get username from token
-        private string? GetLoggedInUsername()
+        private string? GetLoggedInUser()
         {
-            var authHeader = Request.Headers["Authorization"].ToString();
-
-            if (string.IsNullOrWhiteSpace(authHeader) || !authHeader.StartsWith("Bearer "))
+            var header = Request.Headers["Authorization"].ToString();
+            if (string.IsNullOrWhiteSpace(header) || !header.StartsWith("Bearer "))
                 return null;
 
-            var token = authHeader.Replace("Bearer ", "");
-
-            if (!_authService.IsTokenValid(token))
-                return null;
-
+            var token = header.Substring("Bearer ".Length).Trim();
             return _authService.GetUsernameFromToken(token);
         }
 
-        private bool IsAdmin(string username)
+        private async Task<bool> IsAdmin(string username)
         {
-            var user = _userService.GetByUsernameAsync(username).Result;
+            var user = await _userService.GetByUsernameAsync(username);
             return user != null && user.Role == "ADMIN";
         }
 
-        // USER: GET OWN PROFILE
+
         // GET /api/UserProfile/me
         [HttpGet("me")]
         public async Task<IActionResult> GetOwnProfile()
         {
-            var loggedIn = GetLoggedInUsername();
+            var loggedIn = GetLoggedInUser();
             if (loggedIn == null)
-                return Unauthorized("Invalid or expired token.");
+                return Unauthorized(new { error = "Missing or invalid token." });
 
             var user = await _userService.GetByUsernameAsync(loggedIn);
             return user == null ? NotFound() : Ok(user);
         }
 
-        // ADMIN: GET ANY USER PROFILE
-        // GET /api/UserProfile/{username}
-        [HttpGet("{username}")]
-        public async Task<IActionResult> GetUserProfile(string username)
-        {
-            var loggedIn = GetLoggedInUsername();
-            if (loggedIn == null)
-                return Unauthorized("Invalid or expired token.");
 
-            if (!IsAdmin(loggedIn))
-                return Forbid();
+        // GET /api/UserProfile/{username}  (ADMIN ONLY)
+        [HttpGet("{username}")]
+        public async Task<IActionResult> GetUser(string username)
+        {
+            var loggedIn = GetLoggedInUser();
+            if (loggedIn == null)
+                return Unauthorized(new { error = "Missing or invalid token." });
+
+            if (!await IsAdmin(loggedIn))
+                return StatusCode(403, new { error = "Only admin can view other user profiles." });
 
             var user = await _userService.GetByUsernameAsync(username);
             return user == null ? NotFound() : Ok(user);
         }
 
-        // USER: DELETE OWN PROFILE
+
         // DELETE /api/UserProfile/me
         [HttpDelete("me")]
         public async Task<IActionResult> DeleteOwnProfile()
         {
-            var loggedIn = GetLoggedInUsername();
+            var loggedIn = GetLoggedInUser();
             if (loggedIn == null)
-                return Unauthorized("Invalid or expired token.");
+                return Unauthorized(new { error = "Missing or invalid token." });
 
             var deleted = await _userService.DeleteAsync(loggedIn);
-            return deleted ? NoContent() : NotFound();
+            return deleted ? Ok("Account deleted") : NotFound("Account not found");
         }
 
-        // ADMIN: DELETE ANY USER
-        // DELETE /api/UserProfile/{username}
+
+        // DELETE /api/UserProfile/{username}  (ADMIN ONLY)
         [HttpDelete("{username}")]
         public async Task<IActionResult> DeleteUser(string username)
         {
-            var loggedIn = GetLoggedInUsername();
+            var loggedIn = GetLoggedInUser();
             if (loggedIn == null)
-                return Unauthorized("Invalid or expired token.");
+                return Unauthorized(new { error = "Missing or invalid token." });
 
-            if (!IsAdmin(loggedIn))
-                return Forbid();
+            if (!await IsAdmin(loggedIn))
+                return StatusCode(403, new { error = "Only admin can delete other users." });
 
             var deleted = await _userService.DeleteAsync(username);
             return deleted ? NoContent() : NotFound();

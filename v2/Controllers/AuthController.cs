@@ -10,9 +10,12 @@ namespace v2.Controllers
     {
         private readonly IAuthService _authService;
 
-        public AuthController(IAuthService authService)
+        private readonly IUserProfileService _userService;
+
+        public AuthController(IAuthService authService, IUserProfileService userService)
         {
             _authService = authService;
+            _userService = userService;
         }
 
         // REGISTER
@@ -39,6 +42,12 @@ namespace v2.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
+            // Check if username exists BEFORE attempting login
+            var checkUser = await _userService.GetByUsernameAsync(request.Username);
+
+            if (checkUser == null)
+                return BadRequest(new { error = "User does not exist." });
+
             try
             {
                 var response = await _authService.LoginAsync(request);
@@ -59,7 +68,7 @@ namespace v2.Controllers
             }
         }
 
-        // LOGOUT (token required in HEADER)
+        // LOGOUT token required in HEADER
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {

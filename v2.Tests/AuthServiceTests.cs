@@ -20,9 +20,7 @@ namespace v2.Tests
             return new AuthService(db);
         }
 
-        // ───────────────────────────────────────────────
         // REGISTRATION TESTS
-        // ───────────────────────────────────────────────
 
         [Fact]
         public async Task Register_Should_Create_User_And_Return_Token()
@@ -102,9 +100,7 @@ namespace v2.Tests
                 .WithMessage("Username already exists.");
         }
 
-        // ───────────────────────────────────────────────
         // LOGIN TESTS
-        // ───────────────────────────────────────────────
 
         [Fact]
         public async Task Login_Should_Return_Token_When_Credentials_Are_Correct()
