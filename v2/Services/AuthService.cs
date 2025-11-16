@@ -108,12 +108,14 @@ namespace v2.Services
         // ---------------------------------------------------------
         public async Task<bool> LogoutAsync(string token)
         {
+            // IMPORTANT: decode token
+            token = Uri.UnescapeDataString(token);
+
             if (!_sessions.ContainsKey(token))
                 return false;
 
             var username = _sessions[token];
 
-            // only accept the current token
             if (!_userSessions.TryGetValue(username, out var currentToken))
                 return false;
 
@@ -125,6 +127,7 @@ namespace v2.Services
 
             return true;
         }
+
 
         // ---------------------------------------------------------
         // GET USERNAME FROM TOKEN

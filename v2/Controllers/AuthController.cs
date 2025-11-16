@@ -68,7 +68,7 @@ namespace v2.Controllers
             if (string.IsNullOrWhiteSpace(authHeader) || !authHeader.StartsWith("Bearer "))
                 return Unauthorized("Missing or invalid token.");
 
-            var token = authHeader.Substring("Bearer ".Length).Trim();
+            var token = Uri.UnescapeDataString(authHeader.Substring("Bearer ".Length).Trim());
 
             bool success = await _authService.LogoutAsync(token);
 
