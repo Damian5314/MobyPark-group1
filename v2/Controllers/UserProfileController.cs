@@ -17,9 +17,7 @@ namespace v2.Controllers
             _userService = userService;
         }
 
-        // ───────────────────────────────────────────────
         // ADMIN ONLY: GET ALL USERS
-        // ───────────────────────────────────────────────
         [HttpGet]
         [Authorize(Roles = "ADMIN")]
         public async Task<IActionResult> GetAll()
@@ -28,11 +26,9 @@ namespace v2.Controllers
             return Ok(users);
         }
 
-        // ───────────────────────────────────────────────
         // GET PROFILE
         // Admin → can get anyone
         // User  → can get only their own
-        // ───────────────────────────────────────────────
         [HttpGet("{username}")]
         public async Task<IActionResult> GetByUsername(string username)
         {
@@ -46,11 +42,9 @@ namespace v2.Controllers
             return user == null ? NotFound() : Ok(user);
         }
 
-        // ───────────────────────────────────────────────
         // UPDATE PROFILE (NO PASSWORD HERE)
         // Admin → can update anyone fully
         // User  → can update only their own and CANNOT change Role/Active
-        // ───────────────────────────────────────────────
         [HttpPut("{username}")]
         public async Task<IActionResult> Update(string username, [FromBody] UserProfile profile)
         {
@@ -87,11 +81,9 @@ namespace v2.Controllers
             return Ok(updated);
         }
 
-        // ───────────────────────────────────────────────
         // CHANGE PASSWORD
         // User → can change their own (must provide current pw)
         // Admin → can reset any user's password
-        // ───────────────────────────────────────────────
         [HttpPut("{username}/password")]
         public async Task<IActionResult> ChangePassword(
             string username,
@@ -125,11 +117,9 @@ namespace v2.Controllers
             return NoContent();
         }
 
-        // ───────────────────────────────────────────────
         // DELETE PROFILE
         // Admin → can delete anyone
         // User  → can delete only their own
-        // ───────────────────────────────────────────────
         [HttpDelete("{username}")]
         public async Task<IActionResult> Delete(string username)
         {

@@ -43,7 +43,9 @@ namespace v2.Tests
 
             response.Should().NotBeNull();
             response.Token.Should().NotBeNullOrWhiteSpace();
-            response.ExpiresAt.Should().NotBeNullOrWhiteSpace(); // string now
+
+            // ExpiresAt is DateTime => MUST check as DateTime
+            response.ExpiresAt.Should().BeAfter(DateTime.UtcNow);
         }
 
         [Fact]
@@ -63,9 +65,11 @@ namespace v2.Tests
 
             await service.RegisterAsync(req);
 
-            // Get the underlying DbContext to check stored user
-            var dbField = typeof(AuthService).GetField("_db",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            // Extract underlying database
+            var dbField = typeof(AuthService).GetField(
+                "_db",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
+            );
 
             var db = (AppDbContext)dbField!.GetValue(service)!;
 
@@ -124,7 +128,7 @@ namespace v2.Tests
             });
 
             result.Token.Should().NotBeNullOrWhiteSpace();
-            result.ExpiresAt.Should().NotBeNullOrWhiteSpace();
+            result.ExpiresAt.Should().BeAfter(DateTime.UtcNow);
         }
 
         [Fact]
