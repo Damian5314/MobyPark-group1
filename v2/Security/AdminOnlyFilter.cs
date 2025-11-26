@@ -27,6 +27,12 @@ namespace v2.Security
                 return;
             }
 
+            var user = await users.GetByUsernameAsync(username);
+            if (user?.Role != "ADMIN")
+            {
+                context.Result = new ObjectResult(new { error = "Admin only" }) { StatusCode = 403 };
+                return;
+            }
 
             await next();
         }
