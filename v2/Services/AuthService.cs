@@ -50,7 +50,7 @@ namespace v2.Services
                 CreatedAt = DateTime.UtcNow
                     .AddTicks(-(DateTime.UtcNow.Ticks % TimeSpan.TicksPerSecond)),
                 Active = true,
-                Role = "ADMIN"
+                Role = "USER"
             };
 
             _db.Users.Add(user);
