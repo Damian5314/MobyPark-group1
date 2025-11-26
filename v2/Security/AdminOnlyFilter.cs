@@ -12,42 +12,50 @@ namespace v2.Security
             var auth = context.HttpContext.RequestServices.GetRequiredService<IAuthService>();
             var users = context.HttpContext.RequestServices.GetRequiredService<IUserProfileService>();
 
-            string token = context.HttpContext.Request.Headers["Authorization"].ToString();
+            // Use the in-memory token (like Logout)
+            var currentUsername = auth.GetCurrentUsername();
+            Console.WriteLine($"[DEBUG] Current username from memory: {currentUsername}");
 
-            if (!token.StartsWith("Bearer "))
+            if (currentUsername == null)
             {
-                // fallback to current logged-in user's token from memory
-                var currentUsername = auth.GetCurrentUsername();
-                if (currentUsername == null)
-                {
-                    context.Result = new UnauthorizedObjectResult(new { error = "Missing token and no active user" });
-                    return;
-                }
-
-                token = auth.GetActiveTokenForUser(currentUsername) ?? "";
+                Console.WriteLine("[DEBUG] No active user session.");
+                context.Result = new UnauthorizedObjectResult(new { error = "No active user session" });
+                return;
             }
-            else
+
+            var token = auth.GetActiveTokenForUser(currentUsername);
+            Console.WriteLine($"[DEBUG] Active token from memory: {token}");
+
+            if (string.IsNullOrEmpty(token))
             {
-                // Remove "Bearer " prefix
-                token = token.Substring("Bearer ".Length).Trim();
+                Console.WriteLine("[DEBUG] No active user token.");
+                context.Result = new UnauthorizedObjectResult(new { error = "No active user token" });
+                return;
             }
 
             // Get username from token
             var username = auth.GetUsernameFromToken(token);
+            Console.WriteLine($"[DEBUG] Username from token: {username}");
+
             if (username == null)
             {
+                Console.WriteLine("[DEBUG] Invalid token.");
                 context.Result = new UnauthorizedObjectResult(new { error = "Invalid token" });
                 return;
             }
 
             // Get user profile
             var user = await users.GetByUsernameAsync(username);
+            Console.WriteLine($"[DEBUG] User role: {user?.Role}");
+
             if (user?.Role != "ADMIN")
             {
+                Console.WriteLine("[DEBUG] User is not admin.");
                 context.Result = new ObjectResult(new { error = "Admin only" }) { StatusCode = 403 };
                 return;
             }
 
+            Console.WriteLine("[DEBUG] Admin access granted.");
             // Allow request to continue
             await next();
         }

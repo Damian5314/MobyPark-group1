@@ -7,10 +7,10 @@ POST http://localhost:5000/api/auth/register
 Content-Type: application/json
 
 {
-  "username": "testuser",
-  "password": "testuser123!",
-  "name": "testuser",
-  "email": "test@example.com",
+  "username": "ADMIN2",
+  "password": "ADMIN2123!",
+  "name": "ADMIN2",
+  "email": "ADMIN2@example.com",
   "phone": "0612345678",
   "birthYear": 2000
 }
@@ -301,7 +301,7 @@ Content-Type: application/json
 {
   "userId": 1,
   "licensePlate": "XYZ123",
-  "make": "Toyota",
+  "make": "TestAdminAuth",
   "model": "Corolla",
   "color": "Blue",
   "year": 2022
