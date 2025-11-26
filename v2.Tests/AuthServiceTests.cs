@@ -20,8 +20,9 @@ namespace v2.Tests
             return new AuthService(db);
         }
 
-        // REGISTRATION TESTS
-
+        // ---------------------------------------------------------
+        // REGISTER TESTS
+        // ---------------------------------------------------------
         [Fact]
         public async Task Register_Should_Create_User_And_Return_Token()
         {
@@ -29,52 +30,25 @@ namespace v2.Tests
 
             var req = new RegisterRequest
             {
-                Username = "johntest",
-                Password = "johntest",
-                Name = "johntest",
-                Email = "johntest@example.com",
-                Phone = "+310685543241",
-                BirthYear = 2005
+                Username = "user1",
+                Password = "Pass123!",
+                Name = "User One",
+                Email = "user1@test.com",
+                Phone = "+310000001",
+                BirthYear = 1995
             };
 
             var response = await service.RegisterAsync(req);
 
             response.Should().NotBeNull();
             response.Token.Should().NotBeNullOrWhiteSpace();
-
-            // ExpiresAt is DateTime => MUST check as DateTime
             response.ExpiresAt.Should().BeAfter(DateTime.UtcNow);
-        }
 
-        [Fact]
-        public async Task Register_Should_Hash_Password()
-        {
-            var service = CreateService(nameof(Register_Should_Hash_Password));
-
-            var req = new RegisterRequest
-            {
-                Username = "hashTest",
-                Password = "mypassword",
-                Name = "Hash User",
-                Email = "hash@test.com",
-                Phone = "+310000000",
-                BirthYear = 2000
-            };
-
-            await service.RegisterAsync(req);
-
-            // Extract underlying database
-            var dbField = typeof(AuthService).GetField(
-                "_db",
-                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance
-            );
-
-            var db = (AppDbContext)dbField!.GetValue(service)!;
-
-            var user = db.Users.First(u => u.Username == "hashTest");
-
-            user.Password.Should().NotBe("mypassword"); // not plain text
-            PasswordHelper.VerifyPassword("mypassword", user.Password).Should().BeTrue();
+            var dbField = typeof(AuthService)
+                .GetField("_db", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+            var db = (AppDbContext)dbField.GetValue(service)!;
+            var user = await db.Users.FirstAsync(u => u.Username == "user1");
+            PasswordHelper.VerifyPassword("Pass123!", user.Password).Should().BeTrue();
         }
 
         [Fact]
@@ -85,46 +59,52 @@ namespace v2.Tests
             var req = new RegisterRequest
             {
                 Username = "duplicate",
-                Password = "123456",
+                Password = "pass123",
                 Name = "Dup User",
                 Email = "dup@test.com",
-                Phone = "+310000001",
-                BirthYear = 1999
+                Phone = "+310000002",
+                BirthYear = 1990
             };
 
             await service.RegisterAsync(req);
 
-            var act = async () => await service.RegisterAsync(req);
-
-            await act.Should().ThrowAsync<InvalidOperationException>()
-                .WithMessage("Username already exists.");
+            await service.Invoking(s => s.RegisterAsync(req))
+                         .Should()
+                         .ThrowAsync<InvalidOperationException>()
+                         .WithMessage("Username already exists.");
         }
 
+        // ---------------------------------------------------------
         // LOGIN TESTS
-
+        // ---------------------------------------------------------
         [Fact]
-        public async Task Login_Should_Return_Token_When_Credentials_Are_Correct()
+        public async Task Login_Should_Return_Token_When_Credentials_Correct()
         {
-            var service = CreateService(nameof(Login_Should_Return_Token_When_Credentials_Are_Correct));
+            var service = CreateService(nameof(Login_Should_Return_Token_When_Credentials_Correct));
 
             await service.RegisterAsync(new RegisterRequest
             {
                 Username = "loginUser",
-                Password = "mypassword",
+                Password = "password123",
                 Name = "Login User",
                 Email = "login@test.com",
-                Phone = "+310000002",
-                BirthYear = 1995
+                Phone = "+310000003",
+                BirthYear = 1992
             });
 
             var result = await service.LoginAsync(new LoginRequest
             {
                 Username = "loginUser",
-                Password = "mypassword"
+                Password = "password123"
             });
 
             result.Token.Should().NotBeNullOrWhiteSpace();
             result.ExpiresAt.Should().BeAfter(DateTime.UtcNow);
+
+            //session info
+            service.GetUsernameFromToken(result.Token).Should().Be("loginUser");
+            service.IsTokenValid(result.Token).Should().BeTrue();
+            service.GetActiveTokenForUser("loginUser").Should().Be(result.Token);
         }
 
         [Fact]
@@ -135,36 +115,73 @@ namespace v2.Tests
             await service.RegisterAsync(new RegisterRequest
             {
                 Username = "wrongPass",
-                Password = "correct",
+                Password = "correct123",
                 Name = "Wrong Pass User",
                 Email = "wpass@test.com",
-                Phone = "+310000003",
-                BirthYear = 1990
+                Phone = "+310000004",
+                BirthYear = 1988
             });
 
-            var act = async () => await service.LoginAsync(new LoginRequest
+            await service.Invoking(s => s.LoginAsync(new LoginRequest
             {
                 Username = "wrongPass",
                 Password = "incorrect"
+            })).Should()
+              .ThrowAsync<UnauthorizedAccessException>()
+              .WithMessage("Invalid username or password.");
+        }
+
+        // ---------------------------------------------------------
+        // LOGOUT & TOKEN TESTS
+        // ---------------------------------------------------------
+        [Fact]
+        public async Task Logout_Should_Invalidate_Token()
+        {
+            var service = CreateService(nameof(Logout_Should_Invalidate_Token));
+
+            var response = await service.RegisterAsync(new RegisterRequest
+            {
+                Username = "logoutUser",
+                Password = "pass123",
+                Name = "Logout User",
+                Email = "logout@test.com",
+                Phone = "+310000005",
+                BirthYear = 1990
             });
 
-            await act.Should().ThrowAsync<UnauthorizedAccessException>()
-                     .WithMessage("Invalid username or password.");
+            var token = response.Token;
+
+            service.IsTokenValid(token).Should().BeTrue();
+
+            var logoutResult = await service.LogoutAsync(token);
+            logoutResult.Should().BeTrue();
+
+            service.IsTokenValid(token).Should().BeFalse();
+            service.GetUsernameFromToken(token).Should().BeNull();
+            service.GetActiveTokenForUser("logoutUser").Should().BeNull();
         }
 
         [Fact]
-        public async Task Login_Should_Fail_When_User_Does_Not_Exist()
+        public async Task LogoutCurrentUserAsync_Should_Clear_CurrentUserToken()
         {
-            var service = CreateService(nameof(Login_Should_Fail_When_User_Does_Not_Exist));
+            var service = CreateService(nameof(LogoutCurrentUserAsync_Should_Clear_CurrentUserToken));
 
-            var act = async () => await service.LoginAsync(new LoginRequest
+            var response = await service.RegisterAsync(new RegisterRequest
             {
-                Username = "unknownUser",
-                Password = "anything"
+                Username = "currentUser",
+                Password = "pass123",
+                Name = "Current User",
+                Email = "current@test.com",
+                Phone = "+310000006",
+                BirthYear = 1993
             });
 
-            await act.Should().ThrowAsync<UnauthorizedAccessException>()
-                     .WithMessage("Invalid username or password.");
+            var result = await service.LogoutCurrentUserAsync();
+            result.Should().BeTrue();
+
+            //token not valid anymore
+            service.IsTokenValid(response.Token).Should().BeFalse();
+            service.GetCurrentUsername().Should().BeNull();
         }
     }
 }

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using v2.Models;
+using v2.Security;
 using v2.Services;
 
 namespace v2.Controllers
@@ -67,7 +68,8 @@ namespace v2.Controllers
         }
 
 
-        // GET /api/UserProfile/{username}  (ADMIN ONLY)
+        // GET /api/UserProfile/{username}
+        [AdminOnly]
         [HttpGet("{username}")]
         public async Task<IActionResult> GetUser(string username)
         {
@@ -96,7 +98,8 @@ namespace v2.Controllers
         }
 
 
-        // DELETE /api/UserProfile/{username}  (ADMIN ONLY)
+        // DELETE /api/UserProfile/{username}
+        [AdminOnly]
         [HttpDelete("{username}")]
         public async Task<IActionResult> DeleteUser(string username)
         {

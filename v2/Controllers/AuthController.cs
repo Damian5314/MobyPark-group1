@@ -9,7 +9,6 @@ namespace v2.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
-
         private readonly IUserProfileService _userService;
 
         public AuthController(IAuthService authService, IUserProfileService userService)
@@ -42,9 +41,7 @@ namespace v2.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
-            // Check if username exists BEFORE attempting login
             var checkUser = await _userService.GetByUsernameAsync(request.Username);
-
             if (checkUser == null)
                 return BadRequest(new { error = "User does not exist." });
 
@@ -68,24 +65,29 @@ namespace v2.Controllers
             }
         }
 
-        // LOGOUT token required in HEADER
+        // LOGOUT
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
             var authHeader = Request.Headers["Authorization"].ToString();
 
-            if (string.IsNullOrWhiteSpace(authHeader) || !authHeader.StartsWith("Bearer "))
-                return Unauthorized("Missing or invalid token.");
-
-            var token = Uri.UnescapeDataString(authHeader.Substring("Bearer ".Length).Trim());
-
-            bool success = await _authService.LogoutAsync(token);
+            bool success;
+            //met meegegeven header
+            if (!string.IsNullOrWhiteSpace(authHeader) && authHeader.StartsWith("Bearer "))
+            {
+                var token = Uri.UnescapeDataString(authHeader.Substring("Bearer ".Length).Trim());
+                success = await _authService.LogoutAsync(token);
+            }
+            //automatisch in memory header
+            else
+            {
+                success = await _authService.LogoutCurrentUserAsync();
+            }
 
             if (!success)
-                return Unauthorized("Invalid or expired token.");
+                return Unauthorized("No active session or invalid token.");
 
             return Ok(new { message = "Logged out successfully." });
         }
-
     }
 }

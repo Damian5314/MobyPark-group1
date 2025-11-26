@@ -17,6 +17,9 @@ namespace v2.Services
         // username → token
         private readonly Dictionary<string, string> _userSessions = new();
 
+        // currently logged-in user's token (for automatic logout)
+        private string? _currentUserToken;
+
         public AuthService(AppDbContext db)
         {
             _db = db;
@@ -67,6 +70,9 @@ namespace v2.Services
             _sessions[token] = user.Username;
             _userSessions[user.Username] = token;
 
+            // Set current user token for automatic logout
+            _currentUserToken = token;
+
             return new AuthResponse
             {
                 Token = token,
@@ -96,6 +102,9 @@ namespace v2.Services
             _sessions[token] = user.Username;
             _userSessions[user.Username] = token;
 
+            // Set current user token for automatic logout
+            _currentUserToken = token;
+
             return new AuthResponse
             {
                 Token = token,
@@ -104,11 +113,10 @@ namespace v2.Services
         }
 
         // ---------------------------------------------------------
-        // LOGOUT
+        // LOGOUT (manual token)
         // ---------------------------------------------------------
         public async Task<bool> LogoutAsync(string token)
         {
-            // IMPORTANT: decode token
             token = Uri.UnescapeDataString(token);
 
             if (!_sessions.ContainsKey(token))
@@ -125,9 +133,26 @@ namespace v2.Services
             _sessions.Remove(token);
             _userSessions.Remove(username);
 
+            // Clear current token if it matches
+            if (_currentUserToken == token)
+                _currentUserToken = null;
+
             return true;
         }
 
+        // ---------------------------------------------------------
+        // LOGOUT current user (automatic)
+        // ---------------------------------------------------------
+        public async Task<bool> LogoutCurrentUserAsync()
+        {
+            if (_currentUserToken == null)
+                return false; // no active user
+
+            var token = _currentUserToken;
+            _currentUserToken = null; // clear current session
+
+            return await LogoutAsync(token);
+        }
 
         // ---------------------------------------------------------
         // GET USERNAME FROM TOKEN
@@ -148,13 +173,22 @@ namespace v2.Services
         }
 
         // ---------------------------------------------------------
-        // GET ACTIVE USER TOKEN (optional)
+        // GET ACTIVE USER TOKEN
         // ---------------------------------------------------------
         public string? GetActiveTokenForUser(string username)
         {
             return _userSessions.TryGetValue(username, out var token)
                 ? token
                 : null;
+        }
+
+        // ---------------------------------------------------------
+        // GET CURRENT USERNAME
+        // ---------------------------------------------------------
+        public string? GetCurrentUsername()
+        {
+            if (_currentUserToken == null) return null;
+            return GetUsernameFromToken(_currentUserToken);
         }
 
         // ---------------------------------------------------------
