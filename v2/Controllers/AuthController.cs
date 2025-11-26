@@ -65,22 +65,22 @@ namespace v2.Controllers
             }
         }
 
-        // LOGOUT (automatic if no header)
+        // LOGOUT
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
             var authHeader = Request.Headers["Authorization"].ToString();
 
             bool success;
-
+            //met meegegeven header
             if (!string.IsNullOrWhiteSpace(authHeader) && authHeader.StartsWith("Bearer "))
             {
                 var token = Uri.UnescapeDataString(authHeader.Substring("Bearer ".Length).Trim());
                 success = await _authService.LogoutAsync(token);
             }
+            //automatisch in memory header
             else
             {
-                // Automatic logout using in-memory token
                 success = await _authService.LogoutCurrentUserAsync();
             }
 
