@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using v2.Services;
+using v2.Security;
 
 namespace v2.Controllers
 {
@@ -14,7 +15,6 @@ namespace v2.Controllers
             _service = service;
         }
 
-        // ---- CRUD ----
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
@@ -36,7 +36,7 @@ namespace v2.Controllers
             var vehicles = await _service.GetByUserIdAsync(userId);
             return Ok(vehicles);
         }
-
+        [AdminOnly]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] Vehicle vehicle)
         {

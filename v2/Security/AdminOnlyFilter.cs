@@ -8,25 +8,39 @@ namespace v2.Security
     {
         public async Task OnActionExecutionAsync(ActionExecutingContext context, ActionExecutionDelegate next)
         {
+            // Get required services
             var auth = context.HttpContext.RequestServices.GetRequiredService<IAuthService>();
             var users = context.HttpContext.RequestServices.GetRequiredService<IUserProfileService>();
 
-            var header = context.HttpContext.Request.Headers["Authorization"].ToString();
-            if (!header.StartsWith("Bearer "))
+            string token = context.HttpContext.Request.Headers["Authorization"].ToString();
+
+            if (!token.StartsWith("Bearer "))
             {
-                context.Result = new UnauthorizedObjectResult(new { error = "Missing token" });
-                return;
+                // fallback to current logged-in user's token from memory
+                var currentUsername = auth.GetCurrentUsername();
+                if (currentUsername == null)
+                {
+                    context.Result = new UnauthorizedObjectResult(new { error = "Missing token and no active user" });
+                    return;
+                }
+
+                token = auth.GetActiveTokenForUser(currentUsername) ?? "";
+            }
+            else
+            {
+                // Remove "Bearer " prefix
+                token = token.Substring("Bearer ".Length).Trim();
             }
 
-            var token = header.Substring("Bearer ".Length).Trim();
+            // Get username from token
             var username = auth.GetUsernameFromToken(token);
-
             if (username == null)
             {
                 context.Result = new UnauthorizedObjectResult(new { error = "Invalid token" });
                 return;
             }
 
+            // Get user profile
             var user = await users.GetByUsernameAsync(username);
             if (user?.Role != "ADMIN")
             {
@@ -34,6 +48,7 @@ namespace v2.Security
                 return;
             }
 
+            // Allow request to continue
             await next();
         }
     }

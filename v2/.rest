@@ -7,22 +7,35 @@ POST http://localhost:5000/api/auth/register
 Content-Type: application/json
 
 {
-  "username": "johndoe",
-  "password": "Password123!",
-  "name": "John Doe",
-  "email": "john@example.com"
+  "username": "testuser",
+  "password": "testuser123!",
+  "name": "testuser",
+  "email": "test@example.com",
+  "phone": "0612345678",
+  "birthYear": 2000
 }
 
-###
-
-### Login
+### Login user
 POST http://localhost:5000/api/auth/login
 Content-Type: application/json
 
 {
-  "username": "johndoe",
-  "password": "Password123!"
+  "username": "ADMIN",
+  "password": "ADMIN123!"
 }
+
+### Login random user
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "testuser123!"
+}
+
+### Logout current user
+POST http://localhost:5000/api/auth/logout
+
 
 #######################################################################
 ### BILLING ###
@@ -257,41 +270,7 @@ GET http://localhost:5000/api/userprofile
 ### Get specific user profile
 GET http://localhost:5000/api/userprofile/johndoe
 
-###
 
-### Create user profile
-POST http://localhost:5000/api/userprofile
-Content-Type: application/json
-
-{
-  "username": "janedoe",
-  "password": "Password123!",
-  "name": "Jane Doe",
-  "email": "jane@example.com",
-  "phone": "1234567890",
-  "birthYear": 1990,
-  "active": true,
-  "role": "USER"
-}
-
-###
-
-### Update user profile
-PUT http://localhost:5000/api/userprofile/janedoe
-Content-Type: application/json
-
-{
-  "username": "janedoe",
-  "password": "Password123!",
-  "name": "Jane Doe Updated",
-  "email": "jane@example.com",
-  "phone": "1234567890",
-  "birthYear": 1990,
-  "active": true,
-  "role": "USER"
-}
-
-###
 
 ### Delete user profile
 DELETE http://localhost:5000/api/userprofile/janedoe
@@ -306,7 +285,7 @@ GET http://localhost:5000/api/vehicle
 ###
 
 ### Get specific vehicle
-GET http://localhost:5000/api/vehicle/14211
+GET http://localhost:5000/api/vehicle/14210
 
 ###
 
