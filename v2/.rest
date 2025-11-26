@@ -7,24 +7,24 @@ POST http://localhost:5000/api/auth/register
 Content-Type: application/json
 
 {
-  "username": "ADMIN2",
-  "password": "ADMIN2123!",
-  "name": "ADMIN2",
-  "email": "ADMIN2@example.com",
+  "username": "username",
+  "password": "password!",
+  "name": "userrealname",
+  "email": "user@example.com",
   "phone": "0612345678",
   "birthYear": 2000
 }
 
-### Login user
+### Login ADMIN
 POST http://localhost:5000/api/auth/login
 Content-Type: application/json
 
 {
-  "username": "ADMIN",
-  "password": "ADMIN123!"
+  "username": "ADMIN3",
+  "password": "ADMIN3123!"
 }
 
-### Login random user
+### Login random test user
 POST http://localhost:5000/api/auth/login
 Content-Type: application/json
 

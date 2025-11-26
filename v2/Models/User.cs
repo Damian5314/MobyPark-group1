@@ -6,7 +6,7 @@ namespace v2.Models
     public class UserProfile
     {
         public int Id { get; set; }
-               
+
         [Required]
         public string Username { get; set; } = null!;
 
@@ -27,13 +27,13 @@ namespace v2.Models
         [Required]
         public string Phone { get; set; } = null!;
 
-        public string Role { get; set; } = "USER";
+        public string Role { get; set; }
 
 
         [JsonProperty("created_at")]
         public DateTime CreatedAt { get; set; }
 
-        
+
         [JsonProperty("birth_year")]
         [Required]
         [Range(1900, 2025, ErrorMessage = "BirthYear must be between 1900 and 2025.")]
