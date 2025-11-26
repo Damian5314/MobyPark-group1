@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using v2.Security;
 using v2.Services;
 
 namespace v2.Controllers
@@ -21,6 +22,7 @@ namespace v2.Controllers
             return Ok(bills);
         }
 
+        [AdminOnly]
         [HttpGet("user/{userId:int}")]
         public async Task<IActionResult> GetByUserId(int userId)
         {
