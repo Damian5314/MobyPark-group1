@@ -36,6 +36,7 @@ namespace v2.Controllers
             var vehicles = await _service.GetByUserIdAsync(userId);
             return Ok(vehicles);
         }
+
         [AdminOnly]
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] Vehicle vehicle)
@@ -44,6 +45,7 @@ namespace v2.Controllers
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
+        [AdminOnly]
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] Vehicle updated)
         {
@@ -51,6 +53,7 @@ namespace v2.Controllers
             return Ok(result);
         }
 
+        [AdminOnly]
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
