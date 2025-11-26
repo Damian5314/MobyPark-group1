@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using v2.Models;
 using v2.Services;
+using v2.Security;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -34,6 +35,7 @@ public class PaymentController : ControllerBase
         return Ok(payments);
     }
 
+    [AdminOnly]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] Payment payment)
     {
