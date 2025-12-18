@@ -25,9 +25,7 @@ namespace v2.Services
             _db = db;
         }
 
-        // ---------------------------------------------------------
         // REGISTER
-        // ---------------------------------------------------------
         public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
         {
             if (await _db.Users.AnyAsync(u => u.Username == request.Username))
@@ -80,9 +78,7 @@ namespace v2.Services
             };
         }
 
-        // ---------------------------------------------------------
         // LOGIN
-        // ---------------------------------------------------------
         public async Task<AuthResponse> LoginAsync(LoginRequest request)
         {
             var user = await _db.Users.FirstOrDefaultAsync(u => u.Username == request.Username);
@@ -112,9 +108,7 @@ namespace v2.Services
             };
         }
 
-        // ---------------------------------------------------------
         // LOGOUT (manual token)
-        // ---------------------------------------------------------
         public async Task<bool> LogoutAsync(string token)
         {
             token = Uri.UnescapeDataString(token);
@@ -140,9 +134,7 @@ namespace v2.Services
             return true;
         }
 
-        // ---------------------------------------------------------
         // LOGOUT current user (automatic)
-        // ---------------------------------------------------------
         public async Task<bool> LogoutCurrentUserAsync()
         {
             if (_currentUserToken == null)
@@ -154,9 +146,7 @@ namespace v2.Services
             return await LogoutAsync(token);
         }
 
-        // ---------------------------------------------------------
         // GET USERNAME FROM TOKEN
-        // ---------------------------------------------------------
         public string? GetUsernameFromToken(string token)
         {
             return _sessions.TryGetValue(token, out var username)
@@ -164,9 +154,7 @@ namespace v2.Services
                 : null;
         }
 
-        // ---------------------------------------------------------
         // IS TOKEN VALID?
-        // ---------------------------------------------------------
         public bool IsTokenValid(string token)
         {
             return _sessions.ContainsKey(token);
@@ -182,18 +170,15 @@ namespace v2.Services
                 : null;
         }
 
-        // ---------------------------------------------------------
+
         // GET CURRENT USERNAME
-        // ---------------------------------------------------------
         public string? GetCurrentUsername()
         {
             if (_currentUserToken == null) return null;
             return GetUsernameFromToken(_currentUserToken);
         }
 
-        // ---------------------------------------------------------
         // TOKEN GENERATOR
-        // ---------------------------------------------------------
         private static string GenerateToken(string username)
         {
             return Convert.ToBase64String(Guid.NewGuid().ToByteArray()) + username;
