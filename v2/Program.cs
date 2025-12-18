@@ -31,6 +31,28 @@ builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 
 // ---------------------------------------------------------
+// SWAGGER/OPENAPI
+// ---------------------------------------------------------
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new()
+    {
+        Title = "MobyPark API",
+        Version = "v1",
+        Description = "API voor het MobyPark parking management systeem"
+    });
+
+    // Enable XML documentation
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        c.IncludeXmlComments(xmlPath);
+    }
+});
+
+// ---------------------------------------------------------
 // CORS
 // ---------------------------------------------------------
 builder.Services.AddCors(options =>
@@ -91,6 +113,15 @@ else
 // ---------------------------------------------------------
 // MIDDLEWARE PIPELINE
 // ---------------------------------------------------------
+
+// Enable Swagger middleware
+app.UseSwagger();
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "MobyPark API v1");
+    options.RoutePrefix = "swagger"; // Access at http://localhost:5000/swagger
+});
+
 app.UseHttpsRedirection();
 app.UseCors();
 app.UseAuthentication();   // IMPORTANT - before Authorization
@@ -100,6 +131,7 @@ app.MapControllers();
 
 Console.ForegroundColor = ConsoleColor.Cyan;
 Console.WriteLine("Server running at: http://localhost:5000");
+Console.WriteLine("Swagger UI available at: http://localhost:5000/swagger");
 Console.ResetColor();
 
 app.Run();
