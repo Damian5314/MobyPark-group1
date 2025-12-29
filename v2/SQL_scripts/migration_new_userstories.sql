@@ -50,15 +50,15 @@ SELECT 'Fleet Services Group' WHERE NOT EXISTS (SELECT 1 FROM companies WHERE na
 -- Only users with >1 vehicle and no company_id
 UPDATE "Users" u
 SET company_id = (
-    SELECT id FROM companies c
+    SELECT c.id FROM companies c
     ORDER BY random()
     LIMIT 1
 )
-WHERE u.company_id IS NULL
-AND u.id IN (
-    SELECT v.user_id
+WHERE u."company_id" IS NULL
+AND u."Id" IN (
+    SELECT v."UserId"
     FROM "Vehicles" v
-    GROUP BY v.user_id
+    GROUP BY v."UserId"
     HAVING COUNT(*) > 1
 );
 
@@ -110,19 +110,21 @@ SELECT 'Seaside Resort' WHERE NOT EXISTS (SELECT 1 FROM hotels WHERE name='Seasi
 -- 8. LINK RANDOM PARKING LOTS TO HOTELS
 -- Select 3 random ParkingLots
 WITH random_parking AS (
-    SELECT id FROM "ParkingLots"
+    SELECT "Id" FROM "ParkingLots"
     ORDER BY random()
     LIMIT 3
-)
-UPDATE "ParkingLots" pl
-SET hotel_id = h.id,
-    tariff = 0,
-    daytariff = 0
-FROM (
-    SELECT id FROM hotels
+),
+random_hotel AS (
+    SELECT id AS hotel_id
+    FROM hotels
     ORDER BY random()
     LIMIT 1
-) h
-WHERE pl.id IN (SELECT id FROM random_parking);
+)
+UPDATE "ParkingLots" pl
+SET "hotel_id" = rh.hotel_id,
+    "Tariff" = 0,
+    "DayTariff" = 0
+FROM random_parking rp, random_hotel rh
+WHERE pl."Id" = rp."Id";
 
 COMMIT;
