@@ -30,5 +30,5 @@ public class ParkingSession
 
     [JsonProperty("payment_status")]
     // Pending | Paid
-    public string PaymentStatus { get; set; } = "Pending";
+    public string PaymentStatus { get; set; } = null!;
 }
