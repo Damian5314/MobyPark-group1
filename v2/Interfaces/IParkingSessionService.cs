@@ -6,8 +6,7 @@ namespace v2.Services
     {
         Task<ParkingSession> StartSessionAsync(
             int parkingLotId,
-            string licensePlate,
-            string username);
+            string licensePlate);
 
         Task<ParkingSession> StopSessionAsync(int sessionId);
 

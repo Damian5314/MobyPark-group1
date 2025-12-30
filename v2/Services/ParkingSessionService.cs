@@ -19,8 +19,7 @@ namespace v2.Services
 
         public async Task<ParkingSession> StartSessionAsync(
             int parkingLotId,
-            string licensePlate,
-            string username)
+            string licensePlate)
         {
             var lot = await _context.ParkingLots
                 .FirstOrDefaultAsync(l => l.Id == parkingLotId);
@@ -42,7 +41,6 @@ namespace v2.Services
             {
                 ParkingLotId = parkingLotId,
                 LicensePlate = licensePlate,
-                Username = username,
                 Started = DateTime.UtcNow,
                 PaymentStatus = "Pending"
             };
