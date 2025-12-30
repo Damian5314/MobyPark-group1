@@ -19,6 +19,8 @@ builder.Services.AddScoped<IBillingService, BillingService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<IVehicleService, VehicleService>();
 builder.Services.AddScoped<IPaymentService, PaymentService>();
+builder.Services.AddScoped<IParkingSessionService, ParkingSessionService>();
+
 
 // ---------------------------------------------------------
 // AUTHENTICATION (Custom Token Authentication)

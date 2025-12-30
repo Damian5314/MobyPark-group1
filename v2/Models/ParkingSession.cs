@@ -29,5 +29,6 @@ public class ParkingSession
     public decimal Cost { get; set; }
 
     [JsonProperty("payment_status")]
+    // Pending | Paid
     public string PaymentStatus { get; set; } = null!;
 }

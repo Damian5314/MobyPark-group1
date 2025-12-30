@@ -39,10 +39,10 @@ public class PaymentController : ControllerBase
 
     [AdminOnly]
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Payment payment)
+    public async Task<IActionResult> Create([FromBody] PaymentCreateDto dto)
     {
-        var created = await _service.CreateAsync(payment);
-        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        var payment = await _service.CreateAsync(dto);
+        return CreatedAtAction(nameof(GetById), new { id = payment.Id }, payment);
     }
 
     [AdminOnly]
@@ -51,5 +51,21 @@ public class PaymentController : ControllerBase
     {
         var deleted = await _service.DeleteAsync(id);
         return deleted ? NoContent() : NotFound();
+    }
+
+    // Get unpaid sessions for a license plate
+    [HttpGet("unpaid/{licensePlate}")]
+    public async Task<IActionResult> GetUnpaidSessions(string licensePlate)
+    {
+        var sessions = await _service.GetUnpaidSessionsAsync(licensePlate);
+        return Ok(sessions);
+    }
+
+    // Pay a specific session
+    [HttpPost("pay-session")]
+    public async Task<IActionResult> PaySingleSession([FromBody] PaySingleSessionDto dto)
+    {
+        var payment = await _service.PaySingleSessionAsync(dto);
+        return Ok(payment);
     }
 }

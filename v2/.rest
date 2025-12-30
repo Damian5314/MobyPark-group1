@@ -106,41 +106,28 @@ DELETE http://localhost:5000/api/parkinglot/1
 #######################################################################
 ### PARKING SESSION ###
 #######################################################################
-
-### Get all parking sessions
-GET http://localhost:5000/api/parkingsession
-
-###
-
-### Get specific parking session
-GET http://localhost:5000/api/parkingsession/1
-
-###
-
-### Get sessions by username
-GET http://localhost:5000/api/parkingsession/user/johndoe
-
-###
-
-### Start parking session (body)
+### start parking session
 POST http://localhost:5000/api/parkingsession/start
 Content-Type: application/json
 
 {
-  "parkingLotId": 1,
-  "licensePlate": "ABC123",
-  "username": "johndoe"
+  "parkingLotId": 3,
+  "licensePlate": "DAA123"
 }
 
 ###
 
 ### Stop parking session
-POST http://localhost:5000/api/parkingsession/stop/1
+POST http://localhost:5000/api/parkingsession/stop/3
 
-###
+### stop parking session
+POST http://localhost:5000/api/parkingsession/stop/8
 
-### Delete parking session
-DELETE http://localhost:5000/api/parkingsession/1
+### get session by id
+GET http://localhost:5000/api/parkingsession/7
+
+### get all active sessions
+GET http://localhost:5000/api/parkingsession/active
 
 #######################################################################
 ### PAYMENT ###
@@ -148,44 +135,58 @@ DELETE http://localhost:5000/api/parkingsession/1
 
 ### Get all payments
 GET http://localhost:5000/api/payment
+Content-Type: application/json
 
 ###
 
-### Get payment by ID
+### Get payment by ID (AdminOnly)
 GET http://localhost:5000/api/payment/1
+Content-Type: application/json
 
 ###
 
-### Get payments by initiator
-GET http://localhost:5000/api/payment/initiator/johndoe
+### Get payments by initiator (AdminOnly)
+GET http://localhost:5000/api/payment/initiator/ADMIN3
+Accept: application/json
 
 ###
 
-### Create payment
+### Create a new payment (AdminOnly)
 POST http://localhost:5000/api/payment
 Content-Type: application/json
 
 {
-  "transaction": "TX123",
-  "amount": 10.5,
-  "initiator": "johndoe",
-  "createdAt": "2025-11-05T10:00:00Z",
-  "completed": "2025-11-05T10:05:00Z",
-  "hash": "abc123",
-  "tData": {
-    "amount": 10.5,
-    "date": "2025-11-05T10:00:00Z",
-    "method": "Credit Card",
-    "issuer": "Visa",
-    "bank": "Bank A"
-  },
-  "parkingLotId": 1
+  "initiator": "ADMIN3",
+  "licensePlate": "DDD123",
+  "method": "card",
+  "bank": "ING"
 }
 
 ###
 
-### Delete payment
+### Delete a payment (AdminOnly)
 DELETE http://localhost:5000/api/payment/1
+
+
+###
+
+### Get unpaid sessions by license plate
+GET http://localhost:5000/api/payment/unpaid/DDD123
+Accept: application/json
+
+###
+
+### Pay a single session
+POST http://localhost:5000/api/payment/pay-session
+Content-Type: application/json
+
+{
+  "licensePlate": "DAA123",
+  "sessionId": 8,
+  "method": "IDeal",
+  "initiator": "ADMIN3",
+  "bank": "ING"
+}
 
 #######################################################################
 ### RESERVATION ###
@@ -268,7 +269,7 @@ Content-Type: application/json
 
 {
   "userId": 1,
-  "licensePlate": "XYZ123",
+  "licensePlate": "AAA123",
   "make": "TestAdminAuth",
   "model": "Corolla",
   "color": "Blue",
