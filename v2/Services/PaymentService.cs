@@ -70,6 +70,8 @@ namespace v2.Services
                 Completed = DateTime.UtcNow,
                 Transaction = Guid.NewGuid().ToString("N"),
                 Hash = Convert.ToBase64String(Guid.NewGuid().ToByteArray()),
+                SessionId = string.Join(",", openSessions.Select(s => s.Id)),
+                ParkingLotId = openSessions.FirstOrDefault()?.ParkingLotId, // optional: first lot ID
                 TData = new TData
                 {
                     Amount = totalAmount,
@@ -130,6 +132,8 @@ namespace v2.Services
                 Completed = DateTime.UtcNow,
                 Transaction = Guid.NewGuid().ToString("N"),
                 Hash = Convert.ToBase64String(Guid.NewGuid().ToByteArray()),
+                SessionId = session.Id.ToString(),
+                ParkingLotId = session.ParkingLotId,
                 TData = new TData
                 {
                     Amount = session.Cost,
