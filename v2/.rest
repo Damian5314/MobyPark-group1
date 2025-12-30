@@ -241,22 +241,7 @@ DELETE http://localhost:5000/api/reservation/1
 ### Get reservations by user ID
 GET http://localhost:5000/api/reservation/user/1
 
-#######################################################################
-### USER PROFILE ###
-#######################################################################
 
-### Get all user profiles
-GET http://localhost:5000/api/userprofile
-
-###
-
-### Get specific user profile
-GET http://localhost:5000/api/userprofile/johndoe
-
-
-
-### Delete user profile
-DELETE http://localhost:5000/api/userprofile/janedoe
 
 #######################################################################
 ### VEHICLE ###

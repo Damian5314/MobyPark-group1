@@ -21,6 +21,7 @@ public class PaymentController : ControllerBase
         return Ok(payments);
     }
 
+    [AdminOnly]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
@@ -28,6 +29,7 @@ public class PaymentController : ControllerBase
         return payment == null ? NotFound() : Ok(payment);
     }
 
+    [AdminOnly]
     [HttpGet("initiator/{initiator}")]
     public async Task<IActionResult> GetByInitiator(string initiator)
     {
@@ -43,6 +45,7 @@ public class PaymentController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
+    [AdminOnly]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {

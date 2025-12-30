@@ -15,6 +15,7 @@ namespace v2.Controllers
             _billingService = billingService;
         }
 
+        [AdminOnly]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
