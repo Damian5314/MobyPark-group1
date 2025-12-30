@@ -84,6 +84,7 @@ namespace v2.Services
 
             foreach (var session in openSessions)
             {
+                session.Username = dto.Initiator;
                 session.PaymentStatus = "Paid";
             }
 
@@ -141,6 +142,7 @@ namespace v2.Services
 
             _context.Payments.Add(newPayment);
 
+            session.Username = dto.Initiator;
             session.PaymentStatus = "Completed";
 
             await _context.SaveChangesAsync();

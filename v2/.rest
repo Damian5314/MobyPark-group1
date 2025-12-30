@@ -125,7 +125,7 @@ POST http://localhost:5000/api/parkingsession/stop/3
 POST http://localhost:5000/api/parkingsession/stop/1
 
 ### get session by id
-GET http://localhost:5000/api/parkingsession/2
+GET http://localhost:5000/api/parkingsession/3
 
 ### get all active sessions
 GET http://localhost:5000/api/parkingsession/active
@@ -157,11 +157,10 @@ POST http://localhost:5000/api/payment
 Content-Type: application/json
 
 {
-  "initiator": "ADMIN3",
-  "t_data": {
-    "method": "ING",
-    "issuer": "BBB123"
-  }
+  "initiator": "john_doe",
+  "licensePlate": "BBB123",
+  "method": "card",
+  "bank": "ING"
 }
 
 ###
