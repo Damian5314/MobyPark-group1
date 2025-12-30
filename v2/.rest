@@ -112,20 +112,20 @@ Content-Type: application/json
 
 {
   "parkingLotId": 1,
-  "licensePlate": "AB-123-CD",
-  "username": "john_doe"
+  "licensePlate": "BBB123",
+  "username": "ADMIN3"
 }
 
 ###
 
 ### Stop parking session
-POST http://localhost:5000/api/parkingsession/stop/1
+POST http://localhost:5000/api/parkingsession/stop/3
 
 ### stop parking session
-POST http://localhost:5000/api/parkingsession/stop/42
+POST http://localhost:5000/api/parkingsession/stop/1
 
 ### get session by id
-GET http://localhost:5000/api/parkingsession/42
+GET http://localhost:5000/api/parkingsession/2
 
 ### get all active sessions
 GET http://localhost:5000/api/parkingsession/active
@@ -136,44 +136,59 @@ GET http://localhost:5000/api/parkingsession/active
 
 ### Get all payments
 GET http://localhost:5000/api/payment
+Content-Type: application/json
 
 ###
 
-### Get payment by ID
+### Get payment by ID (AdminOnly)
 GET http://localhost:5000/api/payment/1
+Content-Type: application/json
 
 ###
 
-### Get payments by initiator
-GET http://localhost:5000/api/payment/initiator/johndoe
+### Get payments by initiator (AdminOnly)
+GET http://localhost:5000/api/payment/initiator/noravandenberg
+Accept: application/json
 
 ###
 
-### Create payment
+### Create a new payment (AdminOnly)
 POST http://localhost:5000/api/payment
 Content-Type: application/json
 
 {
-  "transaction": "TX123",
-  "amount": 10.5,
-  "initiator": "johndoe",
-  "createdAt": "2025-11-05T10:00:00Z",
-  "completed": "2025-11-05T10:05:00Z",
-  "hash": "abc123",
-  "tData": {
-    "amount": 10.5,
-    "date": "2025-11-05T10:00:00Z",
-    "method": "Credit Card",
-    "issuer": "Visa",
-    "bank": "Bank A"
-  },
-  "parkingLotId": 1
+  "initiator": "ADMIN3",
+  "t_data": {
+    "method": "ING",
+    "issuer": "BBB123"
+  }
 }
 
 ###
 
-### Delete payment
+### Delete a payment (AdminOnly)
 DELETE http://localhost:5000/api/payment/1
+
+
+###
+
+### Get unpaid sessions by license plate
+GET http://localhost:5000/api/payment/unpaid/BBB123
+Accept: application/json
+
+###
+
+### Pay a single session
+POST http://localhost:5000/api/payment/pay-session
+Content-Type: application/json
+
+{
+  "licensePlate": "AAA123",
+  "sessionId": 1,
+  "method": "IDeal",
+  "initiator": "ADMIN3",
+  "bank": "ING"
+}
 
 #######################################################################
 ### RESERVATION ###
@@ -256,7 +271,7 @@ Content-Type: application/json
 
 {
   "userId": 1,
-  "licensePlate": "XYZ123",
+  "licensePlate": "AAA123",
   "make": "TestAdminAuth",
   "model": "Corolla",
   "color": "Blue",

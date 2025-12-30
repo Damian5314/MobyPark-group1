@@ -40,32 +40,32 @@ namespace v2.Services
         }
 
         //pay all
-        public async Task<Payment> CreateAsync(Payment payment)
+        public async Task<Payment> CreateAsync(PaymentCreateDto dto)
         {
-            if (string.IsNullOrWhiteSpace(payment.Initiator))
+            if (string.IsNullOrWhiteSpace(dto.Initiator))
                 throw new InvalidOperationException("Initiator is required");
 
-            // 1️⃣ Find unpaid, stopped parking sessions
+            if (string.IsNullOrWhiteSpace(dto.Method))
+                throw new InvalidOperationException("Payment method is required");
+
+            if (string.IsNullOrWhiteSpace(dto.LicensePlate))
+                throw new InvalidOperationException("License plate is required");
+
             var openSessions = await _context.ParkingSessions
-                .Where(s =>
-                    s.PaymentStatus == "Pending" &&
-                    s.Stopped != default &&
-                    s.LicensePlate != null)
+                .Where(s => s.PaymentStatus == "Pending" &&
+                            s.Stopped != default &&
+                            s.LicensePlate == dto.LicensePlate)
                 .ToListAsync();
 
             if (!openSessions.Any())
-                throw new InvalidOperationException("No unpaid parking sessions found");
+                throw new InvalidOperationException($"No unpaid parking sessions found for license plate {dto.LicensePlate}");
 
-            //total amount 
             var totalAmount = openSessions.Sum(s => s.Cost);
 
-            //create payment 
-            var licensePlates = string.Join(", ", openSessions.Select(s => s.LicensePlate));
-
-            var newPayment = new Payment
+            var payment = new Payment
             {
                 Amount = totalAmount,
-                Initiator = payment.Initiator,
+                Initiator = dto.Initiator,
                 CreatedAt = DateTime.UtcNow,
                 Completed = DateTime.UtcNow,
                 Transaction = Guid.NewGuid().ToString("N"),
@@ -74,24 +74,22 @@ namespace v2.Services
                 {
                     Amount = totalAmount,
                     Date = DateTime.UtcNow,
-                    Method = payment.TData.Method,
-                    Issuer = licensePlates,
-                    Bank = "ING"
+                    Method = dto.Method,
+                    Issuer = dto.Initiator,
+                    Bank = dto.Bank
                 }
             };
 
-            _context.Payments.Add(newPayment);
+            _context.Payments.Add(payment);
 
-            //sessions as completed
             foreach (var session in openSessions)
             {
                 session.PaymentStatus = "Paid";
             }
 
             await _context.SaveChangesAsync();
-            return newPayment;
+            return payment;
         }
-
         public async Task<bool> DeleteAsync(int id)
         {
             var payment = await _context.Payments.FindAsync(id);
@@ -111,12 +109,12 @@ namespace v2.Services
                 .ToListAsync();
         }
 
-        public async Task<Payment> PaySingleSessionAsync(string licensePlate, int sessionId, string method)
+        public async Task<Payment> PaySingleSessionAsync(PaySingleSessionDto dto)
         {
             var session = await _context.ParkingSessions
                 .FirstOrDefaultAsync(s =>
-                    s.Id == sessionId &&
-                    s.LicensePlate == licensePlate &&
+                    s.Id == dto.SessionId &&
+                    s.LicensePlate == dto.LicensePlate &&
                     s.PaymentStatus == "Pending" &&
                     s.Stopped != default);
 
@@ -126,7 +124,7 @@ namespace v2.Services
             var newPayment = new Payment
             {
                 Amount = session.Cost,
-                Initiator = session.Username,
+                Initiator = dto.Initiator,
                 CreatedAt = DateTime.UtcNow,
                 Completed = DateTime.UtcNow,
                 Transaction = Guid.NewGuid().ToString("N"),
@@ -135,9 +133,9 @@ namespace v2.Services
                 {
                     Amount = session.Cost,
                     Date = DateTime.UtcNow,
-                    Method = method,
-                    Issuer = session.LicensePlate,
-                    Bank = "IDeal"
+                    Method = dto.Method,
+                    Issuer = dto.Initiator,
+                    Bank = dto.Bank
                 }
             };
 

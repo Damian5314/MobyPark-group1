@@ -39,10 +39,10 @@ public class PaymentController : ControllerBase
 
     [AdminOnly]
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Payment payment)
+    public async Task<IActionResult> Create([FromBody] PaymentCreateDto dto)
     {
-        var created = await _service.CreateAsync(payment);
-        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        var payment = await _service.CreateAsync(dto);
+        return CreatedAtAction(nameof(GetById), new { id = payment.Id }, payment);
     }
 
     [AdminOnly]
@@ -65,7 +65,7 @@ public class PaymentController : ControllerBase
     [HttpPost("pay-session")]
     public async Task<IActionResult> PaySingleSession([FromBody] PaySingleSessionDto dto)
     {
-        var payment = await _service.PaySingleSessionAsync(dto.LicensePlate, dto.SessionId, dto.Method);
+        var payment = await _service.PaySingleSessionAsync(dto);
         return Ok(payment);
     }
 }
