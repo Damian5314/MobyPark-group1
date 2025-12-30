@@ -39,7 +39,7 @@ namespace v2.Services
                 .ToListAsync();
         }
 
-        // ⭐ THIS IS NOW "PAY OPEN PARKING SESSIONS"
+        //pay all
         public async Task<Payment> CreateAsync(Payment payment)
         {
             if (string.IsNullOrWhiteSpace(payment.Initiator))
@@ -56,10 +56,10 @@ namespace v2.Services
             if (!openSessions.Any())
                 throw new InvalidOperationException("No unpaid parking sessions found");
 
-            // 2️⃣ Calculate total amount (server-side!)
+            //total amount 
             var totalAmount = openSessions.Sum(s => s.Cost);
 
-            // 3️⃣ Create payment (authoritative values)
+            //create payment 
             var licensePlates = string.Join(", ", openSessions.Select(s => s.LicensePlate));
 
             var newPayment = new Payment
@@ -76,7 +76,7 @@ namespace v2.Services
                     Date = DateTime.UtcNow,
                     Method = payment.TData.Method,
                     Issuer = licensePlates,
-                    Bank = "internal"
+                    Bank = "ING"
                 }
             };
 
@@ -101,6 +101,52 @@ namespace v2.Services
             _context.Payments.Remove(payment);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<IEnumerable<ParkingSession>> GetUnpaidSessionsAsync(string licensePlate)
+        {
+            return await _context.ParkingSessions
+                .AsNoTracking()
+                .Where(s => s.LicensePlate == licensePlate && s.PaymentStatus == "Pending" && s.Stopped != default)
+                .ToListAsync();
+        }
+
+        public async Task<Payment> PaySingleSessionAsync(string licensePlate, int sessionId, string method)
+        {
+            var session = await _context.ParkingSessions
+                .FirstOrDefaultAsync(s =>
+                    s.Id == sessionId &&
+                    s.LicensePlate == licensePlate &&
+                    s.PaymentStatus == "Pending" &&
+                    s.Stopped != default);
+
+            if (session == null)
+                throw new InvalidOperationException("No unpaid session found for this license plate and session ID");
+
+            var newPayment = new Payment
+            {
+                Amount = session.Cost,
+                Initiator = session.Username,
+                CreatedAt = DateTime.UtcNow,
+                Completed = DateTime.UtcNow,
+                Transaction = Guid.NewGuid().ToString("N"),
+                Hash = Convert.ToBase64String(Guid.NewGuid().ToByteArray()),
+                TData = new TData
+                {
+                    Amount = session.Cost,
+                    Date = DateTime.UtcNow,
+                    Method = method,
+                    Issuer = session.LicensePlate,
+                    Bank = "IDeal"
+                }
+            };
+
+            _context.Payments.Add(newPayment);
+
+            session.PaymentStatus = "Completed";
+
+            await _context.SaveChangesAsync();
+            return newPayment;
         }
     }
 }

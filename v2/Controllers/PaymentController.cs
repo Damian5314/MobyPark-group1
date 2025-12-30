@@ -52,4 +52,20 @@ public class PaymentController : ControllerBase
         var deleted = await _service.DeleteAsync(id);
         return deleted ? NoContent() : NotFound();
     }
+
+    // Get unpaid sessions for a license plate
+    [HttpGet("unpaid/{licensePlate}")]
+    public async Task<IActionResult> GetUnpaidSessions(string licensePlate)
+    {
+        var sessions = await _service.GetUnpaidSessionsAsync(licensePlate);
+        return Ok(sessions);
+    }
+
+    // Pay a specific session
+    [HttpPost("pay-session")]
+    public async Task<IActionResult> PaySingleSession([FromBody] PaySingleSessionDto dto)
+    {
+        var payment = await _service.PaySingleSessionAsync(dto.LicensePlate, dto.SessionId, dto.Method);
+        return Ok(payment);
+    }
 }

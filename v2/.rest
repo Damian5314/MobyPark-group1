@@ -106,30 +106,14 @@ DELETE http://localhost:5000/api/parkinglot/1
 #######################################################################
 ### PARKING SESSION ###
 #######################################################################
-
-### Get all parking sessions
-GET http://localhost:5000/api/parkingsession
-
-###
-
-### Get specific parking session
-GET http://localhost:5000/api/parkingsession/1
-
-###
-
-### Get sessions by username
-GET http://localhost:5000/api/parkingsession/user/johndoe
-
-###
-
-### Start parking session (body)
+### start parking session
 POST http://localhost:5000/api/parkingsession/start
 Content-Type: application/json
 
 {
   "parkingLotId": 1,
-  "licensePlate": "ABC123",
-  "username": "johndoe"
+  "licensePlate": "AB-123-CD",
+  "username": "john_doe"
 }
 
 ###
@@ -137,10 +121,14 @@ Content-Type: application/json
 ### Stop parking session
 POST http://localhost:5000/api/parkingsession/stop/1
 
-###
+### stop parking session
+POST http://localhost:5000/api/parkingsession/stop/42
 
-### Delete parking session
-DELETE http://localhost:5000/api/parkingsession/1
+### get session by id
+GET http://localhost:5000/api/parkingsession/42
+
+### get all active sessions
+GET http://localhost:5000/api/parkingsession/active
 
 #######################################################################
 ### PAYMENT ###
