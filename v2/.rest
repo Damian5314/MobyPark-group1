@@ -102,23 +102,6 @@ DELETE http://localhost:5000/api/parkinglot/1
 
 ###
 
-### Start a parking session
-POST http://localhost:5000/api/parkinglot/1/sessions/start?licensePlate=ABC123&username=johndoe
-
-###
-
-### Stop a parking session
-POST http://localhost:5000/api/parkinglot/1/sessions/stop?licensePlate=ABC123&username=johndoe
-
-###
-
-### Get all sessions in a parking lot
-GET http://localhost:5000/api/parkinglot/1/sessions
-
-###
-
-### Delete specific parking session
-DELETE http://localhost:5000/api/parkinglot/sessions/1
 
 #######################################################################
 ### PARKING SESSION ###

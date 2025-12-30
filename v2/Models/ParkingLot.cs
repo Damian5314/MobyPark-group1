@@ -15,7 +15,7 @@ namespace v2.Models
 
     public class ParkingLot
     {
-        public int? HotelId { get; set; }
+        public int? hotel_id { get; set; }
 
         [JsonProperty("id")]
         public int Id { get; set; }
