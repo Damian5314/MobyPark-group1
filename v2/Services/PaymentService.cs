@@ -39,17 +39,57 @@ namespace v2.Services
                 .ToListAsync();
         }
 
+        // ⭐ THIS IS NOW "PAY OPEN PARKING SESSIONS"
         public async Task<Payment> CreateAsync(Payment payment)
         {
-            payment.CreatedAt = DateTime.UtcNow;
-            payment.Completed = DateTime.UtcNow;
-            payment.Transaction = Guid.NewGuid().ToString("N");
-            payment.Hash = Convert.ToBase64String(Guid.NewGuid().ToByteArray());
+            if (string.IsNullOrWhiteSpace(payment.Initiator))
+                throw new InvalidOperationException("Initiator is required");
 
-            _context.Payments.Add(payment);
+            // 1️⃣ Find unpaid, stopped parking sessions
+            var openSessions = await _context.ParkingSessions
+                .Where(s =>
+                    s.PaymentStatus == "Pending" &&
+                    s.Stopped != default &&
+                    s.LicensePlate != null)
+                .ToListAsync();
+
+            if (!openSessions.Any())
+                throw new InvalidOperationException("No unpaid parking sessions found");
+
+            // 2️⃣ Calculate total amount (server-side!)
+            var totalAmount = openSessions.Sum(s => s.Cost);
+
+            // 3️⃣ Create payment (authoritative values)
+            var licensePlates = string.Join(", ", openSessions.Select(s => s.LicensePlate));
+
+            var newPayment = new Payment
+            {
+                Amount = totalAmount,
+                Initiator = payment.Initiator,
+                CreatedAt = DateTime.UtcNow,
+                Completed = DateTime.UtcNow,
+                Transaction = Guid.NewGuid().ToString("N"),
+                Hash = Convert.ToBase64String(Guid.NewGuid().ToByteArray()),
+                TData = new TData
+                {
+                    Amount = totalAmount,
+                    Date = DateTime.UtcNow,
+                    Method = payment.TData.Method,
+                    Issuer = licensePlates,
+                    Bank = "internal"
+                }
+            };
+
+            _context.Payments.Add(newPayment);
+
+            //sessions as completed
+            foreach (var session in openSessions)
+            {
+                session.PaymentStatus = "Paid";
+            }
+
             await _context.SaveChangesAsync();
-
-            return payment;
+            return newPayment;
         }
 
         public async Task<bool> DeleteAsync(int id)
