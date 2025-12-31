@@ -1,3 +1,4 @@
+using Azure.Identity;
 using Microsoft.EntityFrameworkCore;
 using v2.Data;
 using v2.Models;
@@ -19,7 +20,8 @@ namespace v2.Services
 
         public async Task<ParkingSession> StartSessionAsync(
             int parkingLotId,
-            string licensePlate)
+            string licensePlate,
+            string username)
         {
             var lot = await _context.ParkingLots
                 .FirstOrDefaultAsync(l => l.Id == parkingLotId);
@@ -41,6 +43,7 @@ namespace v2.Services
             {
                 ParkingLotId = parkingLotId,
                 LicensePlate = licensePlate,
+                Username = username,
                 Started = DateTime.UtcNow,
                 PaymentStatus = "Pending"
             };
@@ -102,6 +105,39 @@ namespace v2.Services
 
             var hours = Math.Ceiling(minutes / 60m);
             return hours * lot.DayTariff;
+        }
+
+        public async Task<ParkingSession> CreateFromReservationAsync(
+        int parkingLotId,
+        string licensePlate,
+        string username,
+        DateTime startTime,
+        DateTime endTime)
+        {
+            var lot = await _context.ParkingLots.FirstOrDefaultAsync(l => l.Id == parkingLotId);
+            if (lot == null)
+                throw new InvalidOperationException("Parking lot not found");
+
+            if (lot.Reserved >= lot.Capacity)
+                throw new InvalidOperationException("Parking lot is full");
+
+            var session = new ParkingSession
+            {
+                ParkingLotId = parkingLotId,
+                LicensePlate = licensePlate,
+                Username = username,
+                Started = startTime,
+                Stopped = endTime,
+                DurationMinutes = (int)(endTime - startTime).TotalMinutes,
+                Cost = CalculateCost((int)(endTime - startTime).TotalMinutes, lot),
+                PaymentStatus = "Pending"
+            };
+
+            lot.Reserved++;
+            _context.ParkingSessions.Add(session);
+            await _context.SaveChangesAsync();
+
+            return session;
         }
     }
 }

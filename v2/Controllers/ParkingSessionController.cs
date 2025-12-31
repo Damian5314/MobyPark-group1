@@ -18,7 +18,7 @@ public class ParkingSessionController : ControllerBase
     [HttpPost("start")]
     public async Task<IActionResult> StartSession([FromBody] StartSessionDto dto)
     {
-        var session = await _service.StartSessionAsync(dto.ParkingLotId, dto.LicensePlate);
+        var session = await _service.StartSessionAsync(dto.ParkingLotId, dto.LicensePlate, dto.Username);
         return Ok(session);
     }
 

@@ -9,6 +9,10 @@ public class ParkingSession
     [JsonProperty("parking_lot_id")]
     public int ParkingLotId { get; set; }
 
+    [NotMapped]
+    [JsonProperty("user")]
+    public string Username { get; set; } = null!;
+
     [JsonProperty("licenseplate")]
     public string LicensePlate { get; set; } = null!;
 

@@ -6,12 +6,19 @@ namespace v2.Services
     {
         Task<ParkingSession> StartSessionAsync(
             int parkingLotId,
-            string licensePlate);
+            string licensePlate,
+            string username);
 
         Task<ParkingSession> StopSessionAsync(int sessionId);
 
         Task<ParkingSession?> GetByIdAsync(int sessionId);
 
         Task<IEnumerable<ParkingSession>> GetActiveSessionsAsync();
+        Task<ParkingSession> CreateFromReservationAsync(
+            int parkingLotId,
+            string licensePlate,
+            string username,
+            DateTime startTime,
+            DateTime endTime);
     }
 }
