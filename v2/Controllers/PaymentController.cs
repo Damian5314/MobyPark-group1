@@ -21,7 +21,6 @@ public class PaymentController : ControllerBase
         return Ok(payments);
     }
 
-    [AdminOnly]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
@@ -37,7 +36,6 @@ public class PaymentController : ControllerBase
         return Ok(payments);
     }
 
-    [AdminOnly]
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] PaymentCreateDto dto)
     {
@@ -53,7 +51,6 @@ public class PaymentController : ControllerBase
         return deleted ? NoContent() : NotFound();
     }
 
-    // Get unpaid sessions for a license plate
     [HttpGet("unpaid/{licensePlate}")]
     public async Task<IActionResult> GetUnpaidSessions(string licensePlate)
     {
@@ -61,7 +58,7 @@ public class PaymentController : ControllerBase
         return Ok(sessions);
     }
 
-    // Pay a specific session
+
     [HttpPost("pay-session")]
     public async Task<IActionResult> PaySingleSession([FromBody] PaySingleSessionDto dto)
     {

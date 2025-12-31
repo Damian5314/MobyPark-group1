@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using v2.Models;
 using v2.Services;
+using v2.Security;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -13,15 +14,15 @@ public class ParkingSessionController : ControllerBase
         _service = service;
     }
 
-    // Start a parking session
+
     [HttpPost("start")]
     public async Task<IActionResult> StartSession([FromBody] StartSessionDto dto)
     {
-        var session = await _service.StartSessionAsync(dto.ParkingLotId, dto.LicensePlate, dto.Username);
+        var session = await _service.StartSessionAsync(dto.ParkingLotId, dto.LicensePlate);
         return Ok(session);
     }
 
-    // Stop a parking session
+
     [HttpPost("stop/{sessionId}")]
     public async Task<IActionResult> StopSession(int sessionId)
     {
@@ -29,7 +30,7 @@ public class ParkingSessionController : ControllerBase
         return Ok(session);
     }
 
-    // Get a parking session by ID
+    [AdminOnly]
     [HttpGet("{sessionId}")]
     public async Task<IActionResult> GetById(int sessionId)
     {
@@ -37,7 +38,7 @@ public class ParkingSessionController : ControllerBase
         return session == null ? NotFound() : Ok(session);
     }
 
-    // Get all active sessions
+    [AdminOnly]
     [HttpGet("active")]
     public async Task<IActionResult> GetActiveSessions()
     {
