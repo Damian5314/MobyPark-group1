@@ -9,6 +9,10 @@ public class ParkingSession
     [JsonProperty("parking_lot_id")]
     public int ParkingLotId { get; set; }
 
+    [NotMapped]
+    [JsonProperty("user")]
+    public string Username { get; set; } = null!;
+
     [JsonProperty("licenseplate")]
     public string LicensePlate { get; set; } = null!;
 
@@ -27,4 +31,5 @@ public class ParkingSession
     [JsonProperty("payment_status")]
     // Pending | Paid
     public string PaymentStatus { get; set; } = null!;
+    public int? ReservationId { get; set; }
 }

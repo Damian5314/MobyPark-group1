@@ -1,3 +1,4 @@
+using Azure.Identity;
 using Microsoft.EntityFrameworkCore;
 using v2.Data;
 using v2.Models;
@@ -19,7 +20,8 @@ namespace v2.Services
 
         public async Task<ParkingSession> StartSessionAsync(
             int parkingLotId,
-            string licensePlate)
+            string licensePlate,
+            string username)
         {
             var lot = await _context.ParkingLots
                 .FirstOrDefaultAsync(l => l.Id == parkingLotId);
@@ -41,6 +43,7 @@ namespace v2.Services
             {
                 ParkingLotId = parkingLotId,
                 LicensePlate = licensePlate,
+                Username = username,
                 Started = DateTime.UtcNow,
                 PaymentStatus = "Pending"
             };

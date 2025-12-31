@@ -97,11 +97,12 @@ Content-Type: application/json
 
 {
   "parkingLotId": 1502,
-  "licensePlate": "DAA123"
+  "licensePlate": "XXX123",
+  "username": "ADMIN3"
 }
 
 ### Stop parking session
-POST http://localhost:5000/api/parkingsession/stop/9
+POST http://localhost:5000/api/parkingsession/stop/11
 
 ### stop parking session
 POST http://localhost:5000/api/parkingsession/stop/8
@@ -134,7 +135,7 @@ Content-Type: application/json
 
 {
   "initiator": "ADMIN3",
-  "licensePlate": "DDD123",
+  "licensePlate": "XXX123",
   "method": "card",
   "bank": "ING"
 }
@@ -143,7 +144,7 @@ Content-Type: application/json
 DELETE http://localhost:5000/api/payment/1
 
 ### Get unpaid sessions by license plate
-GET http://localhost:5000/api/payment/unpaid/DDD123
+GET http://localhost:5000/api/payment/unpaid/XXX123
 Accept: application/json
 
 ### Pay a single session
@@ -151,7 +152,7 @@ POST http://localhost:5000/api/payment/pay-session
 Content-Type: application/json
 
 {
-  "licensePlate": "DAA123",
+  "licensePlate": "XXX123",
   "sessionId": 8,
   "method": "IDeal",
   "initiator": "ADMIN3",
@@ -162,46 +163,47 @@ Content-Type: application/json
 ### RESERVATION ###
 #######################################################################
 
-### Get all reservations
+###get all reservations
 GET http://localhost:5000/api/reservation
 
-### Get reservation by ID
+###get reservation by ID
 GET http://localhost:5000/api/reservation/1
 
-### Create reservation
+###create reservation
 POST http://localhost:5000/api/reservation
 Content-Type: application/json
 
 {
-  "userId": 1,
-  "parkingLotId": 1,
-  "vehicleId": 1,
-  "startTime": "2025-11-05T09:00:00Z",
-  "endTime": "2025-11-05T11:00:00Z",
-  "status": "Pending",
-  "cost": 5
+  "userId": 5,
+  "parkingLotId": 2,
+  "vehicleId": 10,
+  "startTime": "2026-01-01T08:00:00Z",
+  "endTime": "2026-01-01T10:00:00Z"
 }
 
-### Update reservation
+###update reservation
 PUT http://localhost:5000/api/reservation/1
 Content-Type: application/json
 
 {
-  "userId": 1,
-  "parkingLotId": 1,
-  "vehicleId": 1,
-  "startTime": "2025-11-05T09:00:00Z",
-  "endTime": "2025-11-05T12:00:00Z",
-  "status": "Confirmed",
-  "cost": 7
+  "userId": 5,
+  "parkingLotId": 2,
+  "vehicleId": 10,
+  "startTime": "2026-01-01T09:00:00Z",
+  "endTime": "2026-01-01T11:00:00Z"
 }
 
 ### Delete reservation
 DELETE http://localhost:5000/api/reservation/1
 
-### Get reservations by user ID
-GET http://localhost:5000/api/reservation/user/1
+### start parking session for reservation
+POST http://localhost:5000/api/reservation/1/start-session
+Content-Type: application/json
 
+{
+  "licensePlate": "AAA123",
+  "username": "user5"
+}
 
 
 #######################################################################
