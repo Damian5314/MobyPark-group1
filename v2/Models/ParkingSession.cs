@@ -16,10 +16,6 @@ public class ParkingSession
     [JsonProperty("licenseplate")]
     public string LicensePlate { get; set; } = null!;
 
-    [NotMapped]
-    [JsonProperty("user")]
-    public string Username { get; set; } = null!;
-
     [JsonProperty("started")]
     public DateTime Started { get; set; }
 
@@ -35,5 +31,4 @@ public class ParkingSession
     [JsonProperty("payment_status")]
     // Pending | Paid
     public string PaymentStatus { get; set; } = null!;
-    public int? ReservationId { get; set; }
 }

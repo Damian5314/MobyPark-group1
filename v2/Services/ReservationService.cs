@@ -1,14 +1,17 @@
 using Microsoft.EntityFrameworkCore;
 using v2.Data;
 using v2.Models;
+using v2.Services;
 
 public class ReservationService : IReservationService
 {
     private readonly AppDbContext _context;
+    private readonly IParkingSessionService _parkingSessionService;
 
-    public ReservationService(AppDbContext context)
+    public ReservationService(AppDbContext context, IParkingSessionService parkingSessionService)
     {
         _context = context;
+        _parkingSessionService = parkingSessionService;
     }
 
     public async Task<IEnumerable<Reservation>> GetAllAsync()
@@ -63,6 +66,23 @@ public class ReservationService : IReservationService
         reservation.StartTime = dto.StartTime;
         reservation.EndTime = dto.EndTime;
         reservation.VehicleId = dto.VehicleId;
+        reservation.Status = dto.Status;
+
+        //confirmed = start a parking session
+        if (dto.Status == "Confirmed")
+        {
+            var vehicle = await _context.Vehicles.FirstOrDefaultAsync(v => v.Id == reservation.VehicleId);
+            if (vehicle == null)
+                throw new InvalidOperationException("Vehicle not found");
+
+            await _parkingSessionService.CreateFromReservationAsync(
+                reservation.ParkingLotId,
+                vehicle.LicensePlate,
+                reservation.UserId.ToString(),
+                reservation.StartTime,
+                reservation.EndTime
+            );
+        }
 
         await _context.SaveChangesAsync();
         return reservation;
@@ -83,44 +103,4 @@ public class ReservationService : IReservationService
         return true;
     }
 
-    // Convert reservation into an actual ParkingSession
-    public async Task<ParkingSession> StartSessionFromReservationAsync(
-        int reservationId,
-        string licensePlate,
-        string username)
-    {
-        var reservation = await _context.Reservations
-            .FirstOrDefaultAsync(r => r.Id == reservationId && r.Status == "Active");
-
-        if (reservation == null)
-            throw new InvalidOperationException("Reservation not found or inactive");
-
-        var now = DateTime.UtcNow;
-        if (now < reservation.StartTime)
-            throw new InvalidOperationException("Reservation has not started yet");
-
-        if (now > reservation.EndTime)
-            throw new InvalidOperationException("Reservation has already expired");
-
-        var existingSession = await _context.ParkingSessions
-            .AnyAsync(s => s.ReservationId == reservationId);
-
-        if (existingSession)
-            throw new InvalidOperationException("Session already started for this reservation");
-
-        var session = new ParkingSession
-        {
-            ParkingLotId = reservation.ParkingLotId,
-            ReservationId = reservation.Id,
-            LicensePlate = licensePlate,
-            Username = username,
-            Started = DateTime.UtcNow,
-            PaymentStatus = "Pending"
-        };
-
-        _context.ParkingSessions.Add(session);
-        await _context.SaveChangesAsync();
-
-        return session;
-    }
 }

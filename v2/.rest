@@ -46,7 +46,7 @@ POST http://localhost:5000/api/auth/logout
 GET http://localhost:5000/api/parkinglot
 
 ###get specific parkinglot
-GET http://localhost:5000/api/parkinglot/1502
+GET http://localhost:5000/api/parkinglot/2
 
 ###create parking lot
 POST http://localhost:5000/api/parkinglot
@@ -105,10 +105,10 @@ Content-Type: application/json
 POST http://localhost:5000/api/parkingsession/stop/11
 
 ### stop parking session
-POST http://localhost:5000/api/parkingsession/stop/8
+POST http://localhost:5000/api/parkingsession/stop/12
 
 ### get session by id
-GET http://localhost:5000/api/parkingsession/7
+GET http://localhost:5000/api/parkingsession/13
 
 ### get all active sessions
 GET http://localhost:5000/api/parkingsession/active
@@ -135,7 +135,7 @@ Content-Type: application/json
 
 {
   "initiator": "ADMIN3",
-  "licensePlate": "XXX123",
+  "licensePlate": "43-ZSO-4",
   "method": "card",
   "bank": "ING"
 }
@@ -144,7 +144,7 @@ Content-Type: application/json
 DELETE http://localhost:5000/api/payment/1
 
 ### Get unpaid sessions by license plate
-GET http://localhost:5000/api/payment/unpaid/XXX123
+GET http://localhost:5000/api/payment/unpaid/43-ZSO-4
 Accept: application/json
 
 ### Pay a single session
@@ -174,36 +174,29 @@ POST http://localhost:5000/api/reservation
 Content-Type: application/json
 
 {
-  "userId": 5,
+  "userId": 1,
   "parkingLotId": 2,
-  "vehicleId": 10,
+  "vehicleId": 3,
   "startTime": "2026-01-01T08:00:00Z",
-  "endTime": "2026-01-01T10:00:00Z"
+  "endTime": "2026-01-01T12:00:00Z"
 }
 
 ###update reservation
-PUT http://localhost:5000/api/reservation/1
+PUT http://localhost:5000/api/reservation/2006
 Content-Type: application/json
 
 {
-  "userId": 5,
-  "parkingLotId": 2,
-  "vehicleId": 10,
+  "userId": 1,
+  "parkingLotId": 3,
+  "vehicleId": 3,
   "startTime": "2026-01-01T09:00:00Z",
-  "endTime": "2026-01-01T11:00:00Z"
+  "endTime": "2026-01-01T12:00:00Z",
+  "status" : "Confirmed"
 }
 
 ### Delete reservation
-DELETE http://localhost:5000/api/reservation/1
+DELETE http://localhost:5000/api/reservation/2005
 
-### start parking session for reservation
-POST http://localhost:5000/api/reservation/1/start-session
-Content-Type: application/json
-
-{
-  "licensePlate": "AAA123",
-  "username": "user5"
-}
 
 
 #######################################################################
@@ -256,4 +249,4 @@ DELETE http://localhost:5000/api/vehicle/14211
 GET http://localhost:5000/api/billing
 
 ### Get billing by username ID
-GET http://localhost:5000/api/billing/user/800
+GET http://localhost:5000/api/billing/user/1

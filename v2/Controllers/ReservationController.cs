@@ -38,7 +38,9 @@ public class ReservationController : ControllerBase
 
     [AdminOnly]
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] ReservationCreateDto dto)
+    public async Task<IActionResult> UpdateReservation(
+        int id,
+        [FromBody] ReservationCreateDto dto)
     {
         var updated = await _service.UpdateAsync(id, dto);
         return Ok(updated);
@@ -52,17 +54,4 @@ public class ReservationController : ControllerBase
         return deleted ? NoContent() : NotFound();
     }
 
-    //parking session from a reservation
-    [HttpPost("{id}/start-session")]
-    public async Task<IActionResult> StartSession(
-        int id,
-        [FromBody] StartSessionFromReservationDto dto)
-    {
-        var session = await _service.StartSessionFromReservationAsync(
-            id,
-            dto.LicensePlate,
-            dto.Username);
-
-        return Ok(session);
-    }
 }

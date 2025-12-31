@@ -7,6 +7,4 @@ public interface IReservationService
     Task<Reservation> CreateAsync(ReservationCreateDto dto);
     Task<Reservation> UpdateAsync(int id, ReservationCreateDto dto);
     Task<bool> DeleteAsync(int id);
-
-    Task<ParkingSession> StartSessionFromReservationAsync(int reservationId, string licensePlate, string username);
 }
