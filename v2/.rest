@@ -37,75 +37,57 @@ Content-Type: application/json
 POST http://localhost:5000/api/auth/logout
 
 
-#######################################################################
-### BILLING ###
-#######################################################################
-
-### Get 100 billing summaries
-GET http://localhost:5000/api/billing
-
-###
-
-### Get billing by username ID
-GET http://localhost:5000/api/billing/user/800
 
 #######################################################################
 ### PARKING LOT ###
 #######################################################################
 
-### Get 50 parking lots
+###get 100
 GET http://localhost:5000/api/parkinglot
 
-###
-
-### Get specific parking lot
-GET http://localhost:5000/api/parkinglot/1
-
-###
-
-### Create parking lot
+###create parking lot
 POST http://localhost:5000/api/parkinglot
 Content-Type: application/json
 
 {
-  "name": "Lot A",
-  "location": "Center City",
-  "address": "123 Main St",
-  "capacity": 50,
+  "name": "Central Garage",
+  "location": "Amsterdam",
+  "address": "Damrak 1",
+  "capacity": 100,
   "reserved": 0,
-  "tariff": 1.5,
-  "dayTariff": 15,
-  "coordinates": { "lat": 52.1, "lng": 5.1 }
+  "tariff": 2.5,
+  "daytariff": 20,
+  "coordinates": {
+    "lat": 52.3731,
+    "lng": 4.8922
+  }
 }
-
-###
-
-### Update parking lot
+###update parkinglot
 PUT http://localhost:5000/api/parkinglot/1
 Content-Type: application/json
 
 {
-  "name": "Lot A Updated",
-  "location": "Center City",
-  "address": "123 Main St",
-  "capacity": 55,
-  "reserved": 5,
-  "tariff": 2,
-  "dayTariff": 20,
-  "coordinates": { "lat": 52.1, "lng": 5.1 }
+  "name": "Central Garage Updated",
+  "location": "Amsterdam",
+  "address": "Damrak 1",
+  "capacity": 120,
+  "reserved": 10,
+  "tariff": 3.0,
+  "daytariff": 25,
+  "coordinates": {
+    "lat": 52.3731,
+    "lng": 4.8922
+  }
 }
 
-###
-
-### Delete parking lot
+###delete parkinglot
 DELETE http://localhost:5000/api/parkinglot/1
-
-###
 
 
 #######################################################################
 ### PARKING SESSION ###
 #######################################################################
+
 ### start parking session
 POST http://localhost:5000/api/parkingsession/start
 Content-Type: application/json
@@ -114,8 +96,6 @@ Content-Type: application/json
   "parkingLotId": 3,
   "licensePlate": "DAA123"
 }
-
-###
 
 ### Stop parking session
 POST http://localhost:5000/api/parkingsession/stop/3
@@ -137,19 +117,13 @@ GET http://localhost:5000/api/parkingsession/active
 GET http://localhost:5000/api/payment
 Content-Type: application/json
 
-###
-
 ### Get payment by ID (AdminOnly)
 GET http://localhost:5000/api/payment/1
 Content-Type: application/json
 
-###
-
 ### Get payments by initiator (AdminOnly)
 GET http://localhost:5000/api/payment/initiator/ADMIN3
 Accept: application/json
-
-###
 
 ### Create a new payment (AdminOnly)
 POST http://localhost:5000/api/payment
@@ -162,19 +136,12 @@ Content-Type: application/json
   "bank": "ING"
 }
 
-###
-
 ### Delete a payment (AdminOnly)
 DELETE http://localhost:5000/api/payment/1
-
-
-###
 
 ### Get unpaid sessions by license plate
 GET http://localhost:5000/api/payment/unpaid/DDD123
 Accept: application/json
-
-###
 
 ### Pay a single session
 POST http://localhost:5000/api/payment/pay-session
@@ -195,12 +162,8 @@ Content-Type: application/json
 ### Get all reservations
 GET http://localhost:5000/api/reservation
 
-###
-
 ### Get reservation by ID
 GET http://localhost:5000/api/reservation/1
-
-###
 
 ### Create reservation
 POST http://localhost:5000/api/reservation
@@ -216,8 +179,6 @@ Content-Type: application/json
   "cost": 5
 }
 
-###
-
 ### Update reservation
 PUT http://localhost:5000/api/reservation/1
 Content-Type: application/json
@@ -232,12 +193,8 @@ Content-Type: application/json
   "cost": 7
 }
 
-###
-
 ### Delete reservation
 DELETE http://localhost:5000/api/reservation/1
-
-###
 
 ### Get reservations by user ID
 GET http://localhost:5000/api/reservation/user/1
@@ -251,17 +208,11 @@ GET http://localhost:5000/api/reservation/user/1
 ### Get all vehicles
 GET http://localhost:5000/api/vehicle
 
-###
-
 ### Get specific vehicle
 GET http://localhost:5000/api/vehicle/14210
 
-###
-
 ### Get vehicles by user ID
 GET http://localhost:5000/api/vehicle/user/1
-
-###
 
 ### Create vehicle
 POST http://localhost:5000/api/vehicle
@@ -276,8 +227,6 @@ Content-Type: application/json
   "year": 2022
 }
 
-###
-
 ### Update vehicle
 PUT http://localhost:5000/api/vehicle/14211
 Content-Type: application/json
@@ -291,7 +240,15 @@ Content-Type: application/json
   "year": 2023
 }
 
-###
-
 ### Delete vehicle
 DELETE http://localhost:5000/api/vehicle/14211
+
+#######################################################################
+### BILLING ###
+#######################################################################
+
+### Get 100 billing summaries
+GET http://localhost:5000/api/billing
+
+### Get billing by username ID
+GET http://localhost:5000/api/billing/user/800

@@ -15,7 +15,11 @@ namespace v2.Services
 
         public async Task<IEnumerable<ParkingLot>> GetAllAsync()
         {
-            return await _context.ParkingLots.ToListAsync();
+            return await _context.ParkingLots
+                .AsNoTracking()
+                .OrderBy(p => p.Id)
+                .Take(100)
+                .ToListAsync();
         }
 
         public async Task<ParkingLot?> GetByIdAsync(int id)
