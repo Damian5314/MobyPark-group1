@@ -45,12 +45,15 @@ POST http://localhost:5000/api/auth/logout
 ###get 100
 GET http://localhost:5000/api/parkinglot
 
+###get specific parkinglot
+GET http://localhost:5000/api/parkinglot/1502
+
 ###create parking lot
 POST http://localhost:5000/api/parkinglot
 Content-Type: application/json
 
 {
-  "name": "Central Garage",
+  "name": "TestHOTEL",
   "location": "Amsterdam",
   "address": "Damrak 1",
   "capacity": 100,
@@ -63,11 +66,11 @@ Content-Type: application/json
   }
 }
 ###update parkinglot
-PUT http://localhost:5000/api/parkinglot/1
+PUT http://localhost:5000/api/parkinglot/1501
 Content-Type: application/json
 
 {
-  "name": "Central Garage Updated",
+  "name": "TestHotelUPDATED",
   "location": "Amsterdam",
   "address": "Damrak 1",
   "capacity": 120,
@@ -81,7 +84,7 @@ Content-Type: application/json
 }
 
 ###delete parkinglot
-DELETE http://localhost:5000/api/parkinglot/1
+DELETE http://localhost:5000/api/parkinglot/1501
 
 
 #######################################################################
@@ -93,12 +96,12 @@ POST http://localhost:5000/api/parkingsession/start
 Content-Type: application/json
 
 {
-  "parkingLotId": 3,
+  "parkingLotId": 1502,
   "licensePlate": "DAA123"
 }
 
 ### Stop parking session
-POST http://localhost:5000/api/parkingsession/stop/3
+POST http://localhost:5000/api/parkingsession/stop/9
 
 ### stop parking session
 POST http://localhost:5000/api/parkingsession/stop/8

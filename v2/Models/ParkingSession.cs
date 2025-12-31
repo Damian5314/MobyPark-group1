@@ -12,10 +12,6 @@ public class ParkingSession
     [JsonProperty("licenseplate")]
     public string LicensePlate { get; set; } = null!;
 
-    [NotMapped]
-    [JsonProperty("user")]
-    public string Username { get; set; } = null!;
-
     [JsonProperty("started")]
     public DateTime Started { get; set; }
 

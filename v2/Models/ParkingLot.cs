@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Newtonsoft.Json;
 
@@ -17,6 +18,8 @@ namespace v2.Models
     {
         public int? hotel_id { get; set; }
 
+        [Key]
+        [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         [JsonProperty("id")]
         public int Id { get; set; }
 
