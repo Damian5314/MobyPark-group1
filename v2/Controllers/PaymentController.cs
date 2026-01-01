@@ -28,6 +28,7 @@ public class PaymentController : ControllerBase
         return payment == null ? NotFound() : Ok(payment);
     }
 
+    [AdminOnly]
     [HttpGet("initiator/{initiator}")]
     public async Task<IActionResult> GetByInitiator(string initiator)
     {
@@ -35,18 +36,33 @@ public class PaymentController : ControllerBase
         return Ok(payments);
     }
 
-    [AdminOnly]
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Payment payment)
+    public async Task<IActionResult> Create([FromBody] PaymentCreateDto dto)
     {
-        var created = await _service.CreateAsync(payment);
-        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        var payment = await _service.CreateAsync(dto);
+        return CreatedAtAction(nameof(GetById), new { id = payment.Id }, payment);
     }
 
+    [AdminOnly]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
         var deleted = await _service.DeleteAsync(id);
         return deleted ? NoContent() : NotFound();
+    }
+
+    [HttpGet("unpaid/{licensePlate}")]
+    public async Task<IActionResult> GetUnpaidSessions(string licensePlate)
+    {
+        var sessions = await _service.GetUnpaidSessionsAsync(licensePlate);
+        return Ok(sessions);
+    }
+
+
+    [HttpPost("pay-session")]
+    public async Task<IActionResult> PaySingleSession([FromBody] PaySingleSessionDto dto)
+    {
+        var payment = await _service.PaySingleSessionAsync(dto);
+        return Ok(payment);
     }
 }

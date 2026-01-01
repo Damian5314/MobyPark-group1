@@ -17,7 +17,6 @@ namespace v2.Controllers
             _userService = userService;
         }
 
-        // REGISTER
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
@@ -37,7 +36,6 @@ namespace v2.Controllers
             }
         }
 
-        // LOGIN
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
@@ -65,7 +63,6 @@ namespace v2.Controllers
             }
         }
 
-        // LOGOUT
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {

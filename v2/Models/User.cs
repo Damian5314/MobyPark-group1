@@ -5,6 +5,7 @@ namespace v2.Models
 {
     public class UserProfile
     {
+        public int? company_id { get; set; }
         public int Id { get; set; }
 
         [Required]
