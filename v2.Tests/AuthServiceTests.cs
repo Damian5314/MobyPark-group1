@@ -20,9 +20,7 @@ namespace v2.Tests
             return new AuthService(db);
         }
 
-        // ---------------------------------------------------------
         // REGISTER TESTS
-        // ---------------------------------------------------------
         [Fact]
         public async Task Register_Should_Create_User_And_Return_Token()
         {
@@ -74,9 +72,7 @@ namespace v2.Tests
                          .WithMessage("Username already exists.");
         }
 
-        // ---------------------------------------------------------
         // LOGIN TESTS
-        // ---------------------------------------------------------
         [Fact]
         public async Task Login_Should_Return_Token_When_Credentials_Correct()
         {
@@ -131,9 +127,7 @@ namespace v2.Tests
               .WithMessage("Invalid username or password.");
         }
 
-        // ---------------------------------------------------------
         // LOGOUT & TOKEN TESTS
-        // ---------------------------------------------------------
         [Fact]
         public async Task Logout_Should_Invalidate_Token()
         {

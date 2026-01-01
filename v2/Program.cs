@@ -1,19 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using v2.Data;
 using v2.Services;
-using Microsoft.AspNetCore.Authentication;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ---------------------------------------------------------
-// DATABASE
-// ---------------------------------------------------------
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql("Host=localhost;Port=5432;Database=mobypark;Username=postgres;Password=postgres"));
 
-// ---------------------------------------------------------
-// SERVICES
-// ---------------------------------------------------------
 builder.Services.AddSingleton<IAuthService, AuthService>();
 builder.Services.AddScoped<IBillingService, BillingService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
@@ -23,38 +16,28 @@ builder.Services.AddScoped<IParkingSessionService, ParkingSessionService>();
 builder.Services.AddScoped<IParkingLotService, ParkingLotService>();
 builder.Services.AddScoped<IReservationService, ReservationService>();
 
-
-// ---------------------------------------------------------
-// AUTHENTICATION (Custom Token Authentication)
-// ---------------------------------------------------------
-
 builder.Services.AddAuthorization();
-
-// ---------------------------------------------------------
-// CONTROLLERS
-// ---------------------------------------------------------
 builder.Services.AddControllers();
 
-// ---------------------------------------------------------
-// CORS
-// ---------------------------------------------------------
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new() { Title = "v2 API", Version = "v1" });
+});
+
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
-    {
         policy.AllowAnyOrigin()
               .AllowAnyHeader()
-              .AllowAnyMethod();
-    });
+              .AllowAnyMethod()
+    );
 });
 
 var app = builder.Build();
 
 app.Urls.Add("http://localhost:5000");
 
-// ---------------------------------------------------------
-// CHECK DATABASE CONNECTION
-// ---------------------------------------------------------
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
@@ -78,9 +61,6 @@ using (var scope = app.Services.CreateScope())
     }
 }
 
-// ---------------------------------------------------------
-// OPTIONAL: DATA SEEDING
-// ---------------------------------------------------------
 if (args.Length > 0 && args[0].ToLower() == "seed")
 {
     using var scope = app.Services.CreateScope();
@@ -93,18 +73,27 @@ else
     Console.WriteLine("ℹ Run `dotnet run seed` to import data.");
 }
 
-// ---------------------------------------------------------
-// MIDDLEWARE PIPELINE
-// ---------------------------------------------------------
-app.UseHttpsRedirection();
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "v2 API v1");
+    c.RoutePrefix = "swagger";
+});
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
 app.UseCors();
-app.UseAuthentication();   // IMPORTANT - before Authorization
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
 
 Console.ForegroundColor = ConsoleColor.Cyan;
 Console.WriteLine("Server running at: http://localhost:5000");
+Console.WriteLine("Swagger UI at: http://localhost:5000/swagger");
 Console.ResetColor();
 
 app.Run();
