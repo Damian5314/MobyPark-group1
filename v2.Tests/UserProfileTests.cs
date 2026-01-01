@@ -9,9 +9,7 @@ namespace v2.Tests
 {
     public class UserProfileTests : TestBase
     {
-        // ───────────────────────────────────────────────
         // GET PROFILE
-        // ───────────────────────────────────────────────
         [Fact]
         public async Task User_Can_Get_Own_Profile()
         {
@@ -25,9 +23,7 @@ namespace v2.Tests
             user!.Username.Should().Be("testuser");
         }
 
-        // ───────────────────────────────────────────────
         // UPDATE PROFILE
-        // ───────────────────────────────────────────────
         [Fact]
         public async Task User_Cannot_Change_Role_Or_Active()
         {
@@ -53,9 +49,7 @@ namespace v2.Tests
             updated.Active.Should().BeTrue();    // not changed
         }
 
-        // ───────────────────────────────────────────────
         // PASSWORD CHANGE
-        // ───────────────────────────────────────────────
         [Fact]
         public async Task User_Can_Change_Password()
         {
@@ -88,9 +82,7 @@ namespace v2.Tests
             res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         }
 
-        // ───────────────────────────────────────────────
         // DELETE PROFILE
-        // ───────────────────────────────────────────────
         [Fact]
         public async Task User_Can_Delete_Own_Profile()
         {
