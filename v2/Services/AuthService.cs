@@ -160,9 +160,7 @@ namespace v2.Services
             return _sessions.ContainsKey(token);
         }
 
-        // ---------------------------------------------------------
         // GET ACTIVE USER TOKEN
-        // ---------------------------------------------------------
         public string? GetActiveTokenForUser(string username)
         {
             return _userSessions.TryGetValue(username, out var token)

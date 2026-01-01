@@ -182,6 +182,9 @@ namespace v2.Migrations
                     b.Property<decimal>("Tariff")
                         .HasColumnType("numeric");
 
+                    b.Property<int?>("hotel_id")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.ToTable("ParkingLots");
@@ -249,6 +252,7 @@ namespace v2.Migrations
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Email")
+                        .IsRequired()
                         .HasColumnType("text");
 
                     b.Property<string>("Name")
@@ -270,6 +274,9 @@ namespace v2.Migrations
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<int?>("company_id")
+                        .HasColumnType("integer");
 
                     b.HasKey("Id");
 
