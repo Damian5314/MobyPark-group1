@@ -98,6 +98,38 @@ namespace v2.Controllers
             return Ok(new { message = "Password changed successfully." });
         }
 
+        // PUT /api/UserProfile/{username}
+        // ADMIN ONLY - can update everything incl. password in one body
+        [AdminOnly]
+        [HttpPut("{username}")]
+        public async Task<IActionResult> AdminUpdateUser(string username, [FromBody] AdminUpdateUserDto updateRequest)
+        {
+            var loggedIn = GetLoggedInUser();
+            if (string.IsNullOrWhiteSpace(loggedIn))
+                return Unauthorized(new { error = "Missing or invalid token." });
+
+            if (!await IsAdmin(loggedIn))
+                return StatusCode(403, new { error = "Only admin can update users." });
+
+            try
+            {
+                var updated = await _userService.AdminUpdateAsync(username, updateRequest);
+                if (updated == null)
+                    return NotFound(new { error = "User not found." });
+                return Ok(new
+                {
+                    message = "User updated successfully.",
+                    profile = updated
+                });
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("taken"))
+            {
+                return Conflict(new { error = "Username is already taken." });
+            }
+        }
+
+
+
         // GET /api/UserProfile/{username}
         [AdminOnly]
         [HttpGet("{username}")]
