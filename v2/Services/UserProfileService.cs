@@ -32,37 +32,75 @@ namespace v2.Services
             return await _db.Users.ToListAsync();
         }
 
-        // UPDATE USER
-        public async Task<UserProfile?> UpdateAsync(string username, UserProfile profile)
+        // UPDATE USER (self-service: allow Name + Username only, no role changes)
+        public async Task<UserProfile?> UpdateAsync(string username, UpdateMyProfileDto dto)
         {
             var existing = await _db.Users.FirstOrDefaultAsync(u => u.Username == username);
             if (existing == null) return null;
 
-            existing.Name = profile.Name;
-            existing.Email = profile.Email;
-            existing.Phone = profile.Phone;
-            existing.Role = profile.Role;
-            existing.BirthYear = profile.BirthYear;
-            existing.Active = profile.Active;
+            // ---- Username change (optional) ----
+            var requestedUsername = dto.Username?.Trim();
+
+            if (!string.IsNullOrWhiteSpace(requestedUsername) &&
+                !string.Equals(existing.Username, requestedUsername, StringComparison.OrdinalIgnoreCase))
+            {
+                // Check uniqueness
+                var taken = await _db.Users.AnyAsync(u => u.Username == requestedUsername);
+                if (taken)
+                    throw new InvalidOperationException("Username already taken.");
+
+                existing.Username = requestedUsername;
+            }
+
+            // ---- Name change ----
+            existing.Name = dto.Name;
+
+            // Keep these if you still want them editable too
+            existing.Email = dto.Email;
+            existing.Phone = dto.Phone;
+            existing.BirthYear = dto.BirthYear;
 
             await _db.SaveChangesAsync();
             return existing;
         }
 
-        // CHANGE PASSWORD (USER)
         public async Task<bool> ChangePasswordAsync(string username, string currentPassword, string newPassword)
         {
             var existing = await _db.Users.FirstOrDefaultAsync(u => u.Username == username);
             if (existing == null) return false;
 
+            // verify current password
             if (!PasswordHelper.VerifyPassword(currentPassword, existing.Password))
                 return false;
 
-            existing.Password = PasswordHelper.HashPassword(newPassword);
-            await _db.SaveChangesAsync();
+            // hash new password
+            var newHash = PasswordHelper.HashPassword(newPassword);
 
-            return true;
+            // if the new password is same as old (or user typed same), nothing changes
+            if (existing.Password == newHash)
+                return true;
+
+            existing.Password = newHash;
+
+            // force EF to treat it as modified (helpful if Password isn't mapped correctly)
+            _db.Entry(existing).Property(u => u.Password).IsModified = true;
+
+            var written = await _db.SaveChangesAsync();
+
+            // If nothing was written, it means EF didn't persist anything (mapping / db issue)
+            if (written <= 0) return false;
+
+            // Re-load from DB to confirm it really changed
+            var reloaded = await _db.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Username == existing.Username);
+
+            if (reloaded == null) return false;
+
+            // Confirm DB now matches new password
+            return PasswordHelper.VerifyPassword(newPassword, reloaded.Password);
         }
+
 
         // SET PASSWORD (ADMIN)
         public async Task<bool> SetPasswordAsync(string username, string newPassword)
@@ -87,5 +125,17 @@ namespace v2.Services
 
             return true;
         }
+    }
+
+    // DTO defined in same file
+    public class UpdateMyProfileDto
+    {
+        public string Username { get; set; } = ""; // NEW
+        public string Name { get; set; } = "";
+
+        // keep these only if you still want user to edit them
+        public string Email { get; set; } = "";
+        public string? Phone { get; set; }
+        public int? BirthYear { get; set; }
     }
 }

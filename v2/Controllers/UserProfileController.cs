@@ -34,6 +34,12 @@ namespace v2.Controllers
             return user != null && user.Role == "ADMIN";
         }
 
+        // DTO for changing password
+        public class ChangePasswordDto
+        {
+            public string CurrentPassword { get; set; } = "";
+            public string NewPassword { get; set; } = "";
+        }
 
         // GET /api/UserProfile/me
         [HttpGet("me")]
@@ -47,11 +53,12 @@ namespace v2.Controllers
             return user == null ? NotFound() : Ok(user);
         }
 
+        // PUT /api/UserProfile/me
         [HttpPut("me")]
-        public async Task<IActionResult> UpdateOwnProfile([FromBody] UserProfile updateRequest)
+        public async Task<IActionResult> UpdateOwnProfile([FromBody] UpdateMyProfileDto updateRequest)
         {
             var loggedIn = GetLoggedInUser();
-            if (loggedIn == null)
+            if (string.IsNullOrWhiteSpace(loggedIn))
                 return Unauthorized(new { error = "Missing or invalid token." });
 
             var updated = await _userService.UpdateAsync(loggedIn, updateRequest);
@@ -64,9 +71,32 @@ namespace v2.Controllers
                 message = "Profile updated successfully.",
                 profile = updated
             });
-
         }
 
+        // PUT /api/UserProfile/me/password
+        [HttpPut("me/password")]
+        public async Task<IActionResult> ChangeOwnPassword([FromBody] ChangePasswordDto dto)
+        {
+            var loggedIn = GetLoggedInUser();
+            if (string.IsNullOrWhiteSpace(loggedIn))
+                return Unauthorized(new { error = "Missing or invalid token." });
+
+            if (string.IsNullOrWhiteSpace(dto.CurrentPassword) || string.IsNullOrWhiteSpace(dto.NewPassword))
+                return BadRequest(new { error = "Both current and new password are required." });
+
+            // IMPORTANT: if username was changed, old tokens may still contain the old username.
+            // In that case the user won't be found and you should force re-login.
+            var user = await _userService.GetByUsernameAsync(loggedIn);
+            if (user == null)
+                return Unauthorized(new { error = "Token user not found. Please log in again." });
+
+            var success = await _userService.ChangePasswordAsync(loggedIn, dto.CurrentPassword, dto.NewPassword);
+
+            if (!success)
+                return BadRequest(new { error = "Current password is incorrect." });
+
+            return Ok(new { message = "Password changed successfully." });
+        }
 
         // GET /api/UserProfile/{username}
         [AdminOnly]
@@ -84,7 +114,6 @@ namespace v2.Controllers
             return user == null ? NotFound() : Ok(user);
         }
 
-
         // DELETE /api/UserProfile/me
         [HttpDelete("me")]
         public async Task<IActionResult> DeleteOwnProfile()
@@ -96,7 +125,6 @@ namespace v2.Controllers
             var deleted = await _userService.DeleteAsync(loggedIn);
             return deleted ? Ok("Account deleted") : NotFound("Account not found");
         }
-
 
         // DELETE /api/UserProfile/{username}
         [AdminOnly]

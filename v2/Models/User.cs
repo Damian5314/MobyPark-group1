@@ -38,7 +38,7 @@ namespace v2.Models
         [JsonProperty("birth_year")]
         [Required]
         [Range(1900, 2025, ErrorMessage = "BirthYear must be between 1900 and 2025.")]
-        public int BirthYear { get; set; }
+        public int? BirthYear { get; set; }
 
         public bool Active { get; set; }
     }

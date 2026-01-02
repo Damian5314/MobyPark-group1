@@ -1,16 +1,18 @@
 using v2.Models;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using v2.Services;
 
 public interface IUserProfileService
 {
     Task<UserProfile?> GetByUsernameAsync(string username);
     Task<UserProfile?> GetByIdAsync(int id);
     Task<IEnumerable<UserProfile>> GetAllAsync();
-    Task<UserProfile?> UpdateAsync(string username, UserProfile profile);
 
-    // NEW:
-    Task<bool> ChangePasswordAsync(string username, string currentPassword, string newPassword); // user changing own password
-    Task<bool> SetPasswordAsync(string username, string newPassword); // admin reset
+    // FIXED: use DTO, not entity
+    Task<UserProfile?> UpdateAsync(string username, UpdateMyProfileDto dto);
+
+    Task<bool> ChangePasswordAsync(string username, string currentPassword, string newPassword);
+    Task<bool> SetPasswordAsync(string username, string newPassword);
     Task<bool> DeleteAsync(string username);
 }
