@@ -24,29 +24,57 @@ namespace v2.Tests
         [Fact]
         public async Task Register_Should_Create_User_And_Return_Token()
         {
-            var service = CreateService(nameof(Register_Should_Create_User_And_Return_Token));
+            // Arrange
+            var testDbName = nameof(Register_Should_Create_User_And_Return_Token) + "_" + Guid.NewGuid().ToString("N");
+
+            // IMPORTANT: use the SAME DbContextOptions for both service + verification db
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseInMemoryDatabase(testDbName)
+                .Options;
+
+            await using var db = new AppDbContext(options);
+
+            // If AuthService needs other deps in your project, add them here
+            // (This version only depends on AppDbContext like your other services do.)
+            var service = new AuthService(db);
 
             var req = new RegisterRequest
             {
-                Username = "user1",
-                Password = "Pass123!",
+                Username = "usertest",
+                Password = "usertest",
                 Name = "User One",
-                Email = "user1@test.com",
+                Email = "user@test.com",
                 Phone = "+310000001",
                 BirthYear = 1995
             };
 
+            // Act
             var response = await service.RegisterAsync(req);
 
+            // Assert: token returned
             response.Should().NotBeNull();
             response.Token.Should().NotBeNullOrWhiteSpace();
             response.ExpiresAt.Should().BeAfter(DateTime.UtcNow);
 
-            var dbField = typeof(AuthService)
-                .GetField("_db", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
-            var db = (AppDbContext)dbField.GetValue(service)!;
-            var user = await db.Users.FirstAsync(u => u.Username == "user1");
-            PasswordHelper.VerifyPassword("Pass123!", user.Password).Should().BeTrue();
+            // Assert: user inserted in DB
+            // (use AsNoTracking to avoid any EF tracking weirdness)
+            var user = await db.Users.AsNoTracking().SingleOrDefaultAsync(u => u.Username == req.Username);
+
+            user.Should().NotBeNull("RegisterAsync should insert the new user into the database");
+
+            // Assert: stored fields match request
+            user!.Username.Should().Be(req.Username);
+            user.Name.Should().Be(req.Name);
+            user.Email.Should().Be(req.Email);
+            user.Phone.Should().Be(req.Phone);
+            user.BirthYear.Should().Be(req.BirthYear);
+
+            // Assert: password is hashed and verifies
+            PasswordHelper.VerifyPassword(req.Password, user.Password).Should().BeTrue();
+
+            // Optional defaults (adjust/remove if your AuthService sets different defaults)
+            user.Role.Should().NotBeNullOrWhiteSpace();
+            user.Active.Should().BeTrue();
         }
 
         [Fact]

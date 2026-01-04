@@ -4,6 +4,8 @@ using System.Security.Cryptography;
 using System.Text;
 using v2.Data;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
+
 
 namespace v2.Services
 {
@@ -26,8 +28,12 @@ namespace v2.Services
         }
 
         // REGISTER
-        public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
+       public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
         {
+            // ✅ Validate RegisterRequest annotations
+            var context = new ValidationContext(request);
+            Validator.ValidateObject(request, context, validateAllProperties: true);
+
             if (await _db.Users.AnyAsync(u => u.Username == request.Username))
                 throw new InvalidOperationException("Username already exists.");
 
@@ -54,21 +60,16 @@ namespace v2.Services
             _db.Users.Add(user);
             await _db.SaveChangesAsync();
 
-            // Create new session token
             var token = GenerateToken(user.Username);
 
-            // Remove old session if exists
             if (_userSessions.TryGetValue(user.Username, out var oldToken))
             {
                 _sessions.Remove(oldToken);
                 _userSessions.Remove(user.Username);
             }
 
-            // Store session
             _sessions[token] = user.Username;
             _userSessions[user.Username] = token;
-
-            // Set current user token for automatic logout
             _currentUserToken = token;
 
             return new AuthResponse
@@ -77,6 +78,7 @@ namespace v2.Services
                 ExpiresAt = DateTime.UtcNow.AddHours(2)
             };
         }
+
 
         // LOGIN
         public async Task<AuthResponse> LoginAsync(LoginRequest request)

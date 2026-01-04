@@ -1,15 +1,30 @@
 namespace v2.Models
 {
+    using System.ComponentModel.DataAnnotations;
+
     public class RegisterRequest
     {
-        public string Username { get; set; } = null!;
-        public string Password { get; set; } = null!;
-        public string Name { get; set; } = null!;
-        public string? Email { get; set; }
+        [Required]
+        public string Username { get; set; } = "";
 
-        public string Phone { get; set; } = null!;  
-        public int BirthYear { get; set; }          
+        [Required, MinLength(6)]
+        public string Password { get; set; } = "";
+
+        [Required]
+        public string Name { get; set; } = "";
+
+        [Required]
+        [EmailAddress(ErrorMessage = "Invalid email format.")]
+        public string Email { get; set; } = "";
+
+        [Required]
+        public string Phone { get; set; } = "";
+
+        [Required]
+        [Range(1900, 2025)]
+        public int BirthYear { get; set; }
     }
+
 
     public class LoginRequest
     {
