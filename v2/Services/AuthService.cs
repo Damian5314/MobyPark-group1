@@ -30,7 +30,6 @@ namespace v2.Services
         // REGISTER
        public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
         {
-            // ✅ Validate RegisterRequest annotations
             var context = new ValidationContext(request);
             Validator.ValidateObject(request, context, validateAllProperties: true);
 
