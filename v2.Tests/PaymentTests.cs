@@ -53,5 +53,13 @@ namespace v2.Tests
 
             response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         }
+
+        [Fact]
+        public async Task GetByInitiator_Should_Return_Unauthorized_Without_Admin_Token()
+        {
+            var response = await _client.GetAsync("/api/Payment/initiator/testuser");
+
+            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        }
     }
 }
