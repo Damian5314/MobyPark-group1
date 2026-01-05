@@ -61,5 +61,17 @@ namespace v2.Tests
 
             response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         }
+
+        [Fact]
+        public async Task GetUnpaidSessions_Should_Return_List_Of_Sessions()
+        {
+            var response = await _client.GetAsync("/api/Payment/unpaid/XX-YY-99");
+
+            response.EnsureSuccessStatusCode();
+            var sessions = await response.Content.ReadFromJsonAsync<List<ParkingSession>>();
+
+            sessions.Should().NotBeNull();
+            sessions.Should().BeOfType<List<ParkingSession>>();
+        }
     }
 }
