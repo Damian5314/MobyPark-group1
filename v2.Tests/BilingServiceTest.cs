@@ -63,5 +63,13 @@ namespace v2.Tests
 
             response.StatusCode.Should().Be(HttpStatusCode.OK);
         }
+
+        [Fact]
+        public async Task GetByUserId_Should_Return_Unauthorized_Without_Token()
+        {
+            var response = await _client.GetAsync("/api/Billing/user/1");
+
+            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        }
     }
 }
