@@ -73,5 +73,13 @@ namespace v2.Tests
             sessions.Should().NotBeNull();
             sessions.Should().BeOfType<List<ParkingSession>>();
         }
+
+        [Fact]
+        public async Task Delete_Should_Return_Unauthorized_Without_Admin_Token()
+        {
+            var response = await _client.DeleteAsync("/api/Payment/1");
+
+            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        }
     }
 }
