@@ -93,5 +93,32 @@ namespace v2.Tests
 
             response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         }
+
+        [Fact]
+        public async Task GetByUserId_Should_Return_NotFound_For_User_Without_Payments()
+        {
+            var registerResponse = await _client.PostAsJsonAsync("/api/Auth/register", new RegisterRequest
+            {
+                Username = "user_no_payments",
+                Password = "test123",
+                Name = "User Without Payments",
+                Email = "nopayments@test.com",
+                Phone = "+31612345660",
+                BirthYear = 1990
+            });
+
+            registerResponse.EnsureSuccessStatusCode();
+            var authData = await registerResponse.Content.ReadFromJsonAsync<AuthResponse>();
+            _client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", authData!.Token);
+
+            var getUserResponse = await _client.GetAsync("/api/UserProfile/me");
+            getUserResponse.EnsureSuccessStatusCode();
+            var userData = await getUserResponse.Content.ReadFromJsonAsync<UserProfile>();
+
+            var response = await _client.GetAsync($"/api/Billing/user/{userData!.Id}");
+
+            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        }
     }
 }
