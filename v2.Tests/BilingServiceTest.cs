@@ -71,5 +71,27 @@ namespace v2.Tests
 
             response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         }
+
+        [Fact]
+        public async Task GetByUserId_Should_Return_NotFound_For_Nonexistent_User()
+        {
+            var registerResponse = await _client.PostAsJsonAsync("/api/Auth/register", new RegisterRequest
+            {
+                Username = "user_for_404_test",
+                Password = "test123",
+                Name = "Test User",
+                Email = "404test@test.com",
+                Phone = "+31612345679",
+                BirthYear = 1990
+            });
+
+            var authData = await registerResponse.Content.ReadFromJsonAsync<AuthResponse>();
+            _client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", authData!.Token);
+
+            var response = await _client.GetAsync("/api/Billing/user/99999");
+
+            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        }
     }
 }
