@@ -108,5 +108,28 @@ namespace v2.Tests
             payments.Should().NotBeNull();
             payments.Should().BeOfType<List<Payment>>();
         }
+
+        [Fact]
+        public async Task Delete_Should_Return_NotFound_For_Nonexistent_Payment()
+        {
+            var registerResponse = await _client.PostAsJsonAsync("/api/Auth/register", new RegisterRequest
+            {
+                Username = "payment_delete_user",
+                Password = "test123",
+                Name = "Payment Delete User",
+                Email = "paymentdelete@test.com",
+                Phone = "+31612345663",
+                BirthYear = 1990
+            });
+
+            registerResponse.EnsureSuccessStatusCode();
+            var authData = await registerResponse.Content.ReadFromJsonAsync<AuthResponse>();
+            _client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", authData!.Token);
+
+            var response = await _client.DeleteAsync("/api/Payment/99999");
+
+            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        }
     }
 }
