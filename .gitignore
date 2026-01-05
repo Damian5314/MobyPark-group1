@@ -215,3 +215,6 @@ v1/data/
 /v2/obj
 /v2/bin
 /v2/obj/debug
+# Ignore test build output
+v2.Tests/bin/
+v2.Tests/obj/

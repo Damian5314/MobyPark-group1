@@ -1,65 +1,143 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+using Azure.Identity;
+using Microsoft.EntityFrameworkCore;
+using v2.Data;
+using v2.Models;
 
-public class ParkingSessionService : IParkingSessionService
+namespace v2.Services
 {
-    private readonly List<ParkingSession> _sessions = new();
-
-    public async Task<IEnumerable<ParkingSession>> GetAllAsync()
+    public class ParkingSessionService : IParkingSessionService
     {
-        return _sessions;
-    }
+        private readonly AppDbContext _context;
+        private readonly IPaymentService _paymentService;
 
-    public async Task<ParkingSession?> GetByIdAsync(int id)
-    {
-        return _sessions.FirstOrDefault(s => s.Id == id);
-    }
+        public ParkingSessionService(
+            AppDbContext context,
+            IPaymentService paymentService)
+        {
+            _context = context;
+            _paymentService = paymentService;
+        }
 
-    public async Task<IEnumerable<ParkingSession>> GetByUserAsync(string username)
-    {
-        return _sessions.Where(s => s.Username.Equals(username, StringComparison.OrdinalIgnoreCase));
-    }
+        public async Task<ParkingSession> StartSessionAsync(
+            int parkingLotId,
+            string licensePlate,
+            string username)
+        {
+            var lot = await _context.ParkingLots
+                .FirstOrDefaultAsync(l => l.Id == parkingLotId);
 
-    public async Task<ParkingSession> StartSessionAsync(ParkingSession session)
-    {
-        session.Id = _sessions.Count + 1;
-        session.Started = DateTime.UtcNow;
-        session.Stopped = DateTime.MinValue;
-        session.DurationMinutes = 0;
-        session.Cost = 0;
-        session.PaymentStatus = "Unpaid";
+            if (lot == null)
+                throw new InvalidOperationException("Parking lot not found");
 
-        _sessions.Add(session);
-        return session;
-    }
+            if (lot.Reserved >= lot.Capacity)
+                throw new InvalidOperationException("Parking lot is full");
 
-    public async Task<ParkingSession> StopSessionAsync(int id)
-    {
-        var session = _sessions.FirstOrDefault(s => s.Id == id);
-        if (session == null)
-            throw new KeyNotFoundException("Session not found.");
+            var activeSessionExists = await _context.ParkingSessions.AnyAsync(s =>
+                s.LicensePlate == licensePlate &&
+                s.Stopped == default);
 
-        if (session.Stopped != DateTime.MinValue)
-            throw new InvalidOperationException("Session already stopped.");
+            if (activeSessionExists)
+                throw new InvalidOperationException("Active session already exists");
 
-        session.Stopped = DateTime.UtcNow;
-        session.DurationMinutes = (int)(session.Stopped - session.Started).TotalMinutes;
+            var session = new ParkingSession
+            {
+                ParkingLotId = parkingLotId,
+                LicensePlate = licensePlate,
+                Username = username,
+                Started = DateTime.UtcNow,
+                PaymentStatus = "Pending"
+            };
 
-        // Simple cost calculation (e.g., €0.05 per minute)
-        session.Cost = (decimal)(session.DurationMinutes * 0.05);
-        session.PaymentStatus = "Pending";
+            lot.Reserved++;
 
-        return session;
-    }
+            _context.ParkingSessions.Add(session);
+            await _context.SaveChangesAsync();
 
-    public async Task<bool> DeleteAsync(int id)
-    {
-        var session = _sessions.FirstOrDefault(s => s.Id == id);
-        if (session == null) return false;
+            return session;
+        }
 
-        _sessions.Remove(session);
-        return true;
+        public async Task<ParkingSession> StopSessionAsync(int sessionId)
+        {
+            var session = await _context.ParkingSessions
+                .FirstOrDefaultAsync(s => s.Id == sessionId);
+
+            if (session == null)
+                throw new InvalidOperationException("Session not found");
+
+            if (session.Stopped != default)
+                return session;
+
+            var lot = await _context.ParkingLots
+                .FirstAsync(l => l.Id == session.ParkingLotId);
+
+            session.Stopped = DateTime.UtcNow;
+            session.DurationMinutes =
+                (int)(session.Stopped - session.Started).TotalMinutes;
+
+            session.Cost = CalculateCost(session.DurationMinutes, lot);
+            session.PaymentStatus = ParkingPaymentStatus.Pending;
+
+            lot.Reserved--;
+
+            await _context.SaveChangesAsync();
+            return session;
+        }
+
+        public async Task<ParkingSession?> GetByIdAsync(int sessionId)
+        {
+            return await _context.ParkingSessions
+                .AsNoTracking()
+                .FirstOrDefaultAsync(s => s.Id == sessionId);
+        }
+
+        public async Task<IEnumerable<ParkingSession>> GetActiveSessionsAsync()
+        {
+            return await _context.ParkingSessions
+                .AsNoTracking()
+                .Where(s => s.Stopped == default)
+                .ToListAsync();
+        }
+
+        private static decimal CalculateCost(int minutes, ParkingLot lot)
+        {
+            if (minutes <= 60)
+                return lot.Tariff;
+
+            var hours = Math.Ceiling(minutes / 60m);
+            return hours * lot.DayTariff;
+        }
+
+        public async Task<ParkingSession> CreateFromReservationAsync(
+        int parkingLotId,
+        string licensePlate,
+        string username,
+        DateTime startTime,
+        DateTime endTime)
+        {
+            var lot = await _context.ParkingLots.FirstOrDefaultAsync(l => l.Id == parkingLotId);
+            if (lot == null)
+                throw new InvalidOperationException("Parking lot not found");
+
+            if (lot.Reserved >= lot.Capacity)
+                throw new InvalidOperationException("Parking lot is full");
+
+            var session = new ParkingSession
+            {
+                ParkingLotId = parkingLotId,
+                LicensePlate = licensePlate,
+                Username = username,
+                Started = startTime,
+                Stopped = endTime,
+                DurationMinutes = (int)(endTime - startTime).TotalMinutes,
+                Cost = CalculateCost((int)(endTime - startTime).TotalMinutes, lot),
+                PaymentStatus = "Pending"
+            };
+
+            lot.Reserved++;
+            _context.ParkingSessions.Add(session);
+            await _context.SaveChangesAsync();
+
+            return session;
+        }
     }
 }

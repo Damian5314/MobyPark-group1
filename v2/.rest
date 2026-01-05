@@ -1,0 +1,252 @@
+#######################################################################
+### AUTHENTICATION ###
+#######################################################################
+
+### Register a new user
+POST http://localhost:5000/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "username",
+  "password": "password!",
+  "name": "userrealname",
+  "email": "user@example.com",
+  "phone": "0612345678",
+  "birthYear": 2000
+}
+
+### Login ADMIN
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "ADMIN3",
+  "password": "ADMIN3123!"
+}
+
+### Login random test user
+POST http://localhost:5000/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "testuser",
+  "password": "testuser123!"
+}
+
+### Logout current user
+POST http://localhost:5000/api/auth/logout
+
+
+
+#######################################################################
+### PARKING LOT ###
+#######################################################################
+
+###get 100
+GET http://localhost:5000/api/parkinglot
+
+###get specific parkinglot
+GET http://localhost:5000/api/parkinglot/2
+
+###create parking lot
+POST http://localhost:5000/api/parkinglot
+Content-Type: application/json
+
+{
+  "name": "TestHOTEL",
+  "location": "Amsterdam",
+  "address": "Damrak 1",
+  "capacity": 100,
+  "reserved": 0,
+  "tariff": 2.5,
+  "daytariff": 20,
+  "coordinates": {
+    "lat": 52.3731,
+    "lng": 4.8922
+  }
+}
+###update parkinglot
+PUT http://localhost:5000/api/parkinglot/1501
+Content-Type: application/json
+
+{
+  "name": "TestHotelUPDATED",
+  "location": "Amsterdam",
+  "address": "Damrak 1",
+  "capacity": 120,
+  "reserved": 10,
+  "tariff": 3.0,
+  "daytariff": 25,
+  "coordinates": {
+    "lat": 52.3731,
+    "lng": 4.8922
+  }
+}
+
+###delete parkinglot
+DELETE http://localhost:5000/api/parkinglot/1501
+
+
+#######################################################################
+### PARKING SESSION ###
+#######################################################################
+
+### start parking session
+POST http://localhost:5000/api/parkingsession/start
+Content-Type: application/json
+
+{
+  "parkingLotId": 1502,
+  "licensePlate": "XXX123",
+  "username": "ADMIN3"
+}
+
+### Stop parking session
+POST http://localhost:5000/api/parkingsession/stop/11
+
+### stop parking session
+POST http://localhost:5000/api/parkingsession/stop/12
+
+### get session by id
+GET http://localhost:5000/api/parkingsession/13
+
+### get all active sessions
+GET http://localhost:5000/api/parkingsession/active
+
+#######################################################################
+### PAYMENT ###
+#######################################################################
+
+### Get all payments
+GET http://localhost:5000/api/payment
+Content-Type: application/json
+
+### Get payment by ID (AdminOnly)
+GET http://localhost:5000/api/payment/1
+Content-Type: application/json
+
+### Get payments by initiator (AdminOnly)
+GET http://localhost:5000/api/payment/initiator/ADMIN3
+Accept: application/json
+
+### Create a new payment (AdminOnly)
+POST http://localhost:5000/api/payment
+Content-Type: application/json
+
+{
+  "initiator": "ADMIN3",
+  "licensePlate": "43-ZSO-4",
+  "method": "card",
+  "bank": "ING"
+}
+
+### Delete a payment (AdminOnly)
+DELETE http://localhost:5000/api/payment/1
+
+### Get unpaid sessions by license plate
+GET http://localhost:5000/api/payment/unpaid/43-ZSO-4
+Accept: application/json
+
+### Pay a single session
+POST http://localhost:5000/api/payment/pay-session
+Content-Type: application/json
+
+{
+  "licensePlate": "XXX123",
+  "sessionId": 8,
+  "method": "IDeal",
+  "initiator": "ADMIN3",
+  "bank": "ING"
+}
+
+#######################################################################
+### RESERVATION ###
+#######################################################################
+
+###get all reservations
+GET http://localhost:5000/api/reservation
+
+###get reservation by ID
+GET http://localhost:5000/api/reservation/1
+
+###create reservation
+POST http://localhost:5000/api/reservation
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "parkingLotId": 2,
+  "vehicleId": 3,
+  "startTime": "2026-01-01T08:00:00Z",
+  "endTime": "2026-01-01T12:00:00Z"
+}
+
+###update reservation
+PUT http://localhost:5000/api/reservation/2006
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "parkingLotId": 3,
+  "vehicleId": 3,
+  "startTime": "2026-01-01T09:00:00Z",
+  "endTime": "2026-01-01T12:00:00Z",
+  "status" : "Confirmed"
+}
+
+### Delete reservation
+DELETE http://localhost:5000/api/reservation/2005
+
+
+
+#######################################################################
+### VEHICLE ###
+#######################################################################
+
+### Get all vehicles
+GET http://localhost:5000/api/vehicle
+
+### Get specific vehicle
+GET http://localhost:5000/api/vehicle/14210
+
+### Get vehicles by user ID
+GET http://localhost:5000/api/vehicle/user/1
+
+### Create vehicle
+POST http://localhost:5000/api/vehicle
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "licensePlate": "AAA123",
+  "make": "TestAdminAuth",
+  "model": "Corolla",
+  "color": "Blue",
+  "year": 2022
+}
+
+### Update vehicle
+PUT http://localhost:5000/api/vehicle/14211
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "licensePlate": "XYZ123",
+  "make": "Toyota",
+  "model": "CorollaTest",
+  "color": "Red",
+  "year": 2023
+}
+
+### Delete vehicle
+DELETE http://localhost:5000/api/vehicle/14211
+
+#######################################################################
+### BILLING ###
+#######################################################################
+
+### Get 100 billing summaries
+GET http://localhost:5000/api/billing
+
+### Get billing by username ID
+GET http://localhost:5000/api/billing/user/1

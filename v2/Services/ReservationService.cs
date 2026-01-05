@@ -1,58 +1,106 @@
+using Microsoft.EntityFrameworkCore;
+using v2.Data;
 using v2.Models;
+using v2.Services;
 
-namespace v2.Services
+public class ReservationService : IReservationService
 {
-    public class ReservationService : IReservationService
+    private readonly AppDbContext _context;
+    private readonly IParkingSessionService _parkingSessionService;
+
+    public ReservationService(AppDbContext context, IParkingSessionService parkingSessionService)
     {
-        private readonly List<Reservation> _reservations = new();
-
-        public async Task<IEnumerable<Reservation>> GetAllAsync()
-        {
-            return _reservations;
-        }
-
-        public async Task<Reservation?> GetByIdAsync(int id)
-        {
-            return _reservations.FirstOrDefault(r => r.Id == id);
-        }
-
-        public async Task<Reservation> CreateAsync(Reservation reservation)
-        {
-            reservation.Id = _reservations.Count + 1;
-            reservation.CreatedAt = DateTime.UtcNow;
-            reservation.Status = "Active";
-            _reservations.Add(reservation);
-            return reservation;
-        }
-
-        public async Task<Reservation> UpdateAsync(int id, Reservation updated)
-        {
-            var existing = _reservations.FirstOrDefault(r => r.Id == id);
-            if (existing == null)
-                throw new KeyNotFoundException("Reservation not found.");
-
-            existing.StartTime = updated.StartTime;
-            existing.EndTime = updated.EndTime;
-            existing.Status = updated.Status;
-            existing.Cost = updated.Cost;
-            existing.VehicleId = updated.VehicleId;
-            existing.ParkingLotId = updated.ParkingLotId;
-
-            return existing;
-        }
-
-        public async Task<bool> DeleteAsync(int id)
-        {
-            var reservation = _reservations.FirstOrDefault(r => r.Id == id);
-            if (reservation == null) return false;
-
-            _reservations.Remove(reservation);
-            return true;
-        }
-
-        public async Task<IEnumerable<Reservation>> GetByUserIdAsync(int userId)
-        {
-            return _reservations.Where(r => r.UserId == userId);
-        }
+        _context = context;
+        _parkingSessionService = parkingSessionService;
     }
+
+    public async Task<IEnumerable<Reservation>> GetAllAsync()
+    {
+        return await _context.Reservations
+            .AsNoTracking()
+            .OrderByDescending(r => r.CreatedAt)
+            .Take(100)
+            .ToListAsync();
+    }
+
+    public async Task<Reservation?> GetByIdAsync(int id)
+    {
+        return await _context.Reservations
+            .AsNoTracking()
+            .FirstOrDefaultAsync(r => r.Id == id);
+    }
+
+    public async Task<Reservation> CreateAsync(ReservationCreateDto dto)
+    {
+        var lot = await _context.ParkingLots.FirstOrDefaultAsync(l => l.Id == dto.ParkingLotId);
+        if (lot == null)
+            throw new InvalidOperationException("Parking lot not found");
+
+        if (lot.Reserved >= lot.Capacity)
+            throw new InvalidOperationException("Parking lot is full");
+
+        var reservation = new Reservation
+        {
+            UserId = dto.UserId,
+            ParkingLotId = dto.ParkingLotId,
+            VehicleId = dto.VehicleId,
+            StartTime = dto.StartTime,
+            EndTime = dto.EndTime,
+            CreatedAt = DateTime.UtcNow,
+            Status = "Active"
+        };
+
+        lot.Reserved++;
+        _context.Reservations.Add(reservation);
+        await _context.SaveChangesAsync();
+
+        return reservation;
+    }
+
+    public async Task<Reservation> UpdateAsync(int id, ReservationCreateDto dto)
+    {
+        var reservation = await _context.Reservations.FindAsync(id);
+        if (reservation == null)
+            throw new InvalidOperationException("Reservation not found");
+
+        reservation.StartTime = dto.StartTime;
+        reservation.EndTime = dto.EndTime;
+        reservation.VehicleId = dto.VehicleId;
+        reservation.Status = dto.Status;
+
+        //confirmed = start a parking session
+        if (dto.Status == "Confirmed")
+        {
+            var vehicle = await _context.Vehicles.FirstOrDefaultAsync(v => v.Id == reservation.VehicleId);
+            if (vehicle == null)
+                throw new InvalidOperationException("Vehicle not found");
+
+            await _parkingSessionService.CreateFromReservationAsync(
+                reservation.ParkingLotId,
+                vehicle.LicensePlate,
+                reservation.UserId.ToString(),
+                reservation.StartTime,
+                reservation.EndTime
+            );
+        }
+
+        await _context.SaveChangesAsync();
+        return reservation;
+    }
+
+    public async Task<bool> DeleteAsync(int id)
+    {
+        var reservation = await _context.Reservations.FindAsync(id);
+        if (reservation == null)
+            return false;
+
+        var lot = await _context.ParkingLots.FindAsync(reservation.ParkingLotId);
+        if (lot != null && lot.Reserved > 0)
+            lot.Reserved--;
+
+        _context.Reservations.Remove(reservation);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
 }

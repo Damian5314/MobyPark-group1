@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using v2.Security;
 using v2.Services;
 
 namespace v2.Controllers
@@ -14,7 +15,7 @@ namespace v2.Controllers
             _billingService = billingService;
         }
 
-        // ---- Get all users' billing summaries ----
+        [AdminOnly]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -22,11 +23,11 @@ namespace v2.Controllers
             return Ok(bills);
         }
 
-        // ---- Get billing for specific user ----
-        [HttpGet("{username}")]
-        public async Task<IActionResult> GetByUser(string username)
+        [AdminOnly]
+        [HttpGet("user/{userId:int}")]
+        public async Task<IActionResult> GetByUserId(int userId)
         {
-            var billing = await _billingService.GetByUserAsync(username);
+            var billing = await _billingService.GetByUserIdAsync(userId);
             return billing == null ? NotFound() : Ok(billing);
         }
     }

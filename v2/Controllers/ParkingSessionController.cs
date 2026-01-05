@@ -1,4 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using v2.Models;
+using v2.Services;
+using v2.Security;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -11,45 +14,35 @@ public class ParkingSessionController : ControllerBase
         _service = service;
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
+
+    [HttpPost("start")]
+    public async Task<IActionResult> StartSession([FromBody] StartSessionDto dto)
     {
-        var sessions = await _service.GetAllAsync();
-        return Ok(sessions);
+        var session = await _service.StartSessionAsync(dto.ParkingLotId, dto.LicensePlate, dto.Username);
+        return Ok(session);
     }
 
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
+
+    [HttpPost("stop/{sessionId}")]
+    public async Task<IActionResult> StopSession(int sessionId)
     {
-        var session = await _service.GetByIdAsync(id);
+        var session = await _service.StopSessionAsync(sessionId);
+        return Ok(session);
+    }
+
+    [AdminOnly]
+    [HttpGet("{sessionId}")]
+    public async Task<IActionResult> GetById(int sessionId)
+    {
+        var session = await _service.GetByIdAsync(sessionId);
         return session == null ? NotFound() : Ok(session);
     }
 
-    [HttpGet("user/{username}")]
-    public async Task<IActionResult> GetByUser(string username)
+    [AdminOnly]
+    [HttpGet("active")]
+    public async Task<IActionResult> GetActiveSessions()
     {
-        var sessions = await _service.GetByUserAsync(username);
+        var sessions = await _service.GetActiveSessionsAsync();
         return Ok(sessions);
-    }
-
-    [HttpPost("start")]
-    public async Task<IActionResult> Start([FromBody] ParkingSession session)
-    {
-        var started = await _service.StartSessionAsync(session);
-        return CreatedAtAction(nameof(GetById), new { id = started.Id }, started);
-    }
-
-    [HttpPost("stop/{id}")]
-    public async Task<IActionResult> Stop(int id)
-    {
-        var stopped = await _service.StopSessionAsync(id);
-        return Ok(stopped);
-    }
-
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
-    {
-        var deleted = await _service.DeleteAsync(id);
-        return deleted ? NoContent() : NotFound();
     }
 }
