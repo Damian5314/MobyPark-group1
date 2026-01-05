@@ -1,100 +1,151 @@
-// using FluentAssertions;
-// using Microsoft.EntityFrameworkCore;
-// using v2.Data;
-// using v2.Models;
-// using v2.Services;
-// using Xunit;
+using System.Net;
+using System.Net.Http.Headers;
+using System.Net.Http.Json;
+using FluentAssertions;
+using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using v2.Models;
+using v2.Services;
+using Xunit;
 
-// namespace v2.Tests
-// {
-//     public class BillingServiceTests
-//     {
-//         private BillingService CreateService(string dbName, out AppDbContext db)
-//         {
-//             var options = new DbContextOptionsBuilder<AppDbContext>()
-//                 .UseInMemoryDatabase(databaseName: dbName)
-//                 .Options;
+namespace v2.Tests
+{
+    public class BillingTests : IClassFixture<WebApplicationFactory<Program>>
+    {
+        private readonly HttpClient _client;
 
-//             db = new AppDbContext(options);
-//             return new BillingService(db);
-//         }
+        public BillingTests(WebApplicationFactory<Program> factory)
+        {
+            var f = factory.WithWebHostBuilder(builder =>
+            {
+                builder.ConfigureServices(services =>
+                {
+                    var billingDescriptors = services
+                        .Where(d => d.ServiceType == typeof(IBillingService))
+                        .ToList();
 
-//         // GetByUserIdAsync
+                    foreach (var d in billingDescriptors)
+                        services.Remove(d);
 
-//         [Fact]
-//         public async Task GetByUserIdAsync_Should_Return_Null_When_User_Not_Found()
-//         {
-//             var service = CreateService(nameof(GetByUserIdAsync_Should_Return_Null_When_User_Not_Found), out _);
+                    services.AddScoped<IBillingService, BillingService>();
+                });
+            });
 
-//             var result = await service.GetByUserIdAsync(999);
+            _client = f.CreateClient();
+        }
 
-//             result.Should().BeNull();
-//         }
+        [Fact]
+        public async Task GetAll_Should_Return_Unauthorized_Without_Admin_Token()
+        {
+            var response = await _client.GetAsync("/api/Billing");
 
-//         [Fact]
-//         public async Task GetByUserIdAsync_Should_Return_Null_When_User_Has_No_Payments()
-//         {
-//             var service = CreateService(nameof(GetByUserIdAsync_Should_Return_Null_When_User_Has_No_Payments), out var db);
+            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        }
 
-//             db.Users.Add(new UserProfile { Id = 1, Username = "testuser" });
-//             await db.SaveChangesAsync();
+        [Fact]
+        public async Task GetAll_Should_Return_OK_With_Admin_Token()
+        {
+            var registerResponse = await _client.PostAsJsonAsync("/api/Auth/register", new RegisterRequest
+            {
+                Username = "admin_billing_test",
+                Password = "admin123",
+                Name = "Admin User",
+                Email = "admin@test.com",
+                Phone = "+31612345678",
+                BirthYear = 1990
+            });
 
-//             var result = await service.GetByUserIdAsync(1);
+            var authData = await registerResponse.Content.ReadFromJsonAsync<AuthResponse>();
+            _client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", authData!.Token);
 
-//             result.Should().BeNull();
-//         }
+            var response = await _client.GetAsync("/api/Billing");
 
-//         [Fact]
-//         public async Task GetByUserIdAsync_Should_Return_Billing_With_Payments()
-//         {
-//             var service = CreateService(nameof(GetByUserIdAsync_Should_Return_Billing_With_Payments), out var db);
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+        }
 
-//             db.Users.Add(new UserProfile { Id = 1, Username = "john" }); db.Payments.Add(new Payment { Id = 10, Amount = 5.00m, Initiator = "john" });
-//             db.Payments.Add(new Payment { Id = 11, Amount = 10.00m, Initiator = "john" });
+        [Fact]
+        public async Task GetByUserId_Should_Return_Unauthorized_Without_Token()
+        {
+            var response = await _client.GetAsync("/api/Billing/user/1");
 
-//             await db.SaveChangesAsync();
+            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        }
 
-//             var result = await service.GetByUserIdAsync(1);
+        [Fact]
+        public async Task GetByUserId_Should_Return_NotFound_For_Nonexistent_User()
+        {
+            var registerResponse = await _client.PostAsJsonAsync("/api/Auth/register", new RegisterRequest
+            {
+                Username = "user_for_404_test",
+                Password = "test123",
+                Name = "Test User",
+                Email = "404test@test.com",
+                Phone = "+31612345679",
+                BirthYear = 1990
+            });
 
-//             result.Should().NotBeNull();
-//             result!.User.Should().Be("john");
-//             result.Payments.Should().HaveCount(2);
-//         }
+            var authData = await registerResponse.Content.ReadFromJsonAsync<AuthResponse>();
+            _client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", authData!.Token);
 
-//         // GetAllAsync TESTS
+            var response = await _client.GetAsync("/api/Billing/user/99999");
 
-//         [Fact]
-//         public async Task GetAllAsync_Should_Return_Empty_When_No_Payments()
-//         {
-//             var service = CreateService(nameof(GetAllAsync_Should_Return_Empty_When_No_Payments), out _);
+            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        }
 
-//             var result = await service.GetAllAsync();
+        [Fact]
+        public async Task GetByUserId_Should_Return_NotFound_For_User_Without_Payments()
+        {
+            var registerResponse = await _client.PostAsJsonAsync("/api/Auth/register", new RegisterRequest
+            {
+                Username = "user_no_payments",
+                Password = "test123",
+                Name = "User Without Payments",
+                Email = "nopayments@test.com",
+                Phone = "+31612345660",
+                BirthYear = 1990
+            });
 
-//             result.Should().BeEmpty();
-//         }
+            registerResponse.EnsureSuccessStatusCode();
+            var authData = await registerResponse.Content.ReadFromJsonAsync<AuthResponse>();
+            _client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", authData!.Token);
 
-//         [Fact]
-//         public async Task GetAllAsync_Should_Group_Payments_By_User()
-//         {
-//             var service = CreateService(nameof(GetAllAsync_Should_Group_Payments_By_User), out var db);
+            var getUserResponse = await _client.GetAsync("/api/UserProfile/me");
+            getUserResponse.EnsureSuccessStatusCode();
+            var userData = await getUserResponse.Content.ReadFromJsonAsync<UserProfile>();
 
-//             db.Payments.AddRange(
-//                 new Payment { Id = 1, Amount = 5, Initiator = "alice" },
-//                 new Payment { Id = 2, Amount = 6, Initiator = "alice" },
-//                 new Payment { Id = 3, Amount = 7, Initiator = "bob" }
-//             );
+            var response = await _client.GetAsync($"/api/Billing/user/{userData!.Id}");
 
-//             await db.SaveChangesAsync();
+            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        }
 
-//             var result = (await service.GetAllAsync()).ToList();
+        [Fact]
+        public async Task GetAll_Should_Return_List_Of_Billings()
+        {
+            var registerResponse = await _client.PostAsJsonAsync("/api/Auth/register", new RegisterRequest
+            {
+                Username = "billing_list_user",
+                Password = "test123",
+                Name = "Billing List User",
+                Email = "billinglist@test.com",
+                Phone = "+31612345661",
+                BirthYear = 1990
+            });
 
-//             result.Should().HaveCount(2);
+            registerResponse.EnsureSuccessStatusCode();
+            var authData = await registerResponse.Content.ReadFromJsonAsync<AuthResponse>();
+            _client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", authData!.Token);
 
-//             var aliceBilling = result.First(b => b.User == "alice");
-//             aliceBilling.Payments.Should().HaveCount(2);
+            var response = await _client.GetAsync("/api/Billing");
 
-//             var bobBilling = result.First(b => b.User == "bob");
-//             bobBilling.Payments.Should().HaveCount(1);
-//         }
-//     }
-// }
+            response.EnsureSuccessStatusCode();
+            var billings = await response.Content.ReadFromJsonAsync<List<Billing>>();
+
+            billings.Should().NotBeNull();
+            billings.Should().BeOfType<List<Billing>>();
+        }
+    }
+}
