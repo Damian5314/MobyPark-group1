@@ -120,5 +120,32 @@ namespace v2.Tests
 
             response.StatusCode.Should().Be(HttpStatusCode.NotFound);
         }
+
+        [Fact]
+        public async Task GetAll_Should_Return_List_Of_Billings()
+        {
+            var registerResponse = await _client.PostAsJsonAsync("/api/Auth/register", new RegisterRequest
+            {
+                Username = "billing_list_user",
+                Password = "test123",
+                Name = "Billing List User",
+                Email = "billinglist@test.com",
+                Phone = "+31612345661",
+                BirthYear = 1990
+            });
+
+            registerResponse.EnsureSuccessStatusCode();
+            var authData = await registerResponse.Content.ReadFromJsonAsync<AuthResponse>();
+            _client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", authData!.Token);
+
+            var response = await _client.GetAsync("/api/Billing");
+
+            response.EnsureSuccessStatusCode();
+            var billings = await response.Content.ReadFromJsonAsync<List<Billing>>();
+
+            billings.Should().NotBeNull();
+            billings.Should().BeOfType<List<Billing>>();
+        }
     }
 }
