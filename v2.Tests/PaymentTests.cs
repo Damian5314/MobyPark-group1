@@ -45,5 +45,13 @@ namespace v2.Tests
             payments.Should().NotBeNull();
             payments.Should().BeOfType<List<Payment>>();
         }
+
+        [Fact]
+        public async Task GetById_Should_Return_NotFound_For_Nonexistent_Payment()
+        {
+            var response = await _client.GetAsync("/api/Payment/99999");
+
+            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        }
     }
 }
