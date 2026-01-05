@@ -81,5 +81,32 @@ namespace v2.Tests
 
             response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         }
+
+        [Fact]
+        public async Task GetByInitiator_Should_Return_Payments_With_Token()
+        {
+            var registerResponse = await _client.PostAsJsonAsync("/api/Auth/register", new RegisterRequest
+            {
+                Username = "payment_initiator_user",
+                Password = "test123",
+                Name = "Payment Initiator User",
+                Email = "paymentinitiator@test.com",
+                Phone = "+31612345662",
+                BirthYear = 1990
+            });
+
+            registerResponse.EnsureSuccessStatusCode();
+            var authData = await registerResponse.Content.ReadFromJsonAsync<AuthResponse>();
+            _client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", authData!.Token);
+
+            var response = await _client.GetAsync("/api/Payment/initiator/testuser");
+
+            response.EnsureSuccessStatusCode();
+            var payments = await response.Content.ReadFromJsonAsync<List<Payment>>();
+
+            payments.Should().NotBeNull();
+            payments.Should().BeOfType<List<Payment>>();
+        }
     }
 }
