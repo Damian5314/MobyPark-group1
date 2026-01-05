@@ -1,0 +1,86 @@
+name: CD Pipeline - Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # Triggers on version tags like v1.0.0, v2.1.3, etc.
+
+jobs:
+  create-release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Get all history for changelog generation
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build solution
+      run: dotnet build --configuration Release --no-restore
+
+    - name: Run tests
+      run: dotnet test --configuration Release --no-build --verbosity normal
+
+    - name: Publish application
+      run: |
+        dotnet publish v2/v2.csproj --configuration Release --output ./publish/linux-x64 --runtime linux-x64 --self-contained true
+        dotnet publish v2/v2.csproj --configuration Release --output ./publish/win-x64 --runtime win-x64 --self-contained true
+
+    - name: Create release archives
+      run: |
+        cd publish
+        tar -czf ../mobypark-linux-x64.tar.gz linux-x64/
+        cd ../publish
+        zip -r ../mobypark-win-x64.zip win-x64/
+
+    - name: Generate changelog
+      id: changelog
+      run: |
+        # Get the previous tag
+        PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+        if [ -z "$PREVIOUS_TAG" ]; then
+          CHANGELOG=$(git log --pretty=format:"- %s (%h)" --no-merges)
+        else
+          CHANGELOG=$(git log $PREVIOUS_TAG..HEAD --pretty=format:"- %s (%h)" --no-merges)
+        fi
+        echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+        echo "$CHANGELOG" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        body: |
+          ## Changes
+          ${{ steps.changelog.outputs.CHANGELOG }}
+
+          ## Installation
+          Download the appropriate archive for your platform and extract it.
+
+          ### Linux
+          ```bash
+          tar -xzf mobypark-linux-x64.tar.gz
+          cd linux-x64
+          ./v2
+          ```
+
+          ### Windows
+          Extract `mobypark-win-x64.zip` and run `v2.exe`
+        files: |
+          mobypark-linux-x64.tar.gz
+          mobypark-win-x64.zip
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
