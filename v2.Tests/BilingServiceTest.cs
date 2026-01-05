@@ -41,5 +41,27 @@ namespace v2.Tests
 
             response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
         }
+
+        [Fact]
+        public async Task GetAll_Should_Return_OK_With_Admin_Token()
+        {
+            var registerResponse = await _client.PostAsJsonAsync("/api/Auth/register", new RegisterRequest
+            {
+                Username = "admin_billing_test",
+                Password = "admin123",
+                Name = "Admin User",
+                Email = "admin@test.com",
+                Phone = "+31612345678",
+                BirthYear = 1990
+            });
+
+            var authData = await registerResponse.Content.ReadFromJsonAsync<AuthResponse>();
+            _client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", authData!.Token);
+
+            var response = await _client.GetAsync("/api/Billing");
+
+            response.StatusCode.Should().Be(HttpStatusCode.OK);
+        }
     }
 }
