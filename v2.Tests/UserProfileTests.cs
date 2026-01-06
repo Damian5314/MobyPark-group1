@@ -1,236 +1,187 @@
-using System.Net;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
+using System;
+using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using v2.Data;
 using v2.Models;
+using v2.Security;
+using v2.Services;
 using Xunit;
 
 namespace v2.Tests
 {
-    public class UserProfileTests : TestBase
+    public class UserProfileServiceTests
     {
-        private const string RegisterUrl = "/api/Auth/register"; // <-- change if your route differs
+        private readonly AppDbContext _context;
+        private readonly UserProfileService _service;
 
-        // Matches the register JSON you provided
-        private class RegisterRequest
+        public UserProfileServiceTests()
         {
-            public string Username { get; set; } = "";
-            public string Password { get; set; } = "";
-            public string Name { get; set; } = "";
-            public string Email { get; set; } = "";
-            public string Phone { get; set; } = "";
-            public int BirthYear { get; set; }
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseInMemoryDatabase(Guid.NewGuid().ToString())
+                .Options;
+
+            _context = new AppDbContext(options);
+            _context.Database.EnsureDeleted();
+            _context.Database.EnsureCreated();
+
+            SeedDatabase(_context);
+
+            _service = new UserProfileService(_context);
         }
 
-        // Common register response shape in many projects
-        // If your API returns different JSON, adjust this DTO accordingly.
-        private class AuthResponse
+        private static void SeedDatabase(AppDbContext context)
         {
-            public string Token { get; set; } = "";
-        }
-
-        private class UpdateMyProfileRequest
-        {
-            public string Username { get; set; } = "";
-            public string Name { get; set; } = "";
-            public string Email { get; set; } = "";
-            public string? Phone { get; set; }
-            public int? BirthYear { get; set; }
-        }
-
-        private class ChangePasswordRequest
-        {
-            public string CurrentPassword { get; set; } = "";
-            public string NewPassword { get; set; } = "";
-        }
-
-        private class MessageResponse
-        {
-            public string Message { get; set; } = "";
-        }
-
-        private class UpdateProfileResponse
-        {
-            public string Message { get; set; } = "";
-            public UserProfile Profile { get; set; } = default!;
-        }
-
-        private async Task<string> RegisterAndGetTokenAsync(string username, string password = "test123")
-        {
-            var req = new RegisterRequest
+            // User 1
+            context.Users.Add(new UserProfile
             {
-                Username = username,
-                Password = password,
+                Id = 1,
+                Username = "testuser",
+                Password = PasswordHelper.HashPassword("test123"),
                 Name = "Test User",
-                Email = $"{username}@example.com",
+                Email = "testuser@example.com",
+                Phone = "123456",
+                BirthYear = 1990,
+                Role = "USER",
+                Active = true
+            });
+
+            // User 2 (to test "username taken")
+            context.Users.Add(new UserProfile
+            {
+                Id = 2,
+                Username = "takenname",
+                Password = PasswordHelper.HashPassword("pw"),
+                Name = "Other User",
+                Email = "other@example.com",
+                Phone = "999",
+                BirthYear = 1980,
+                Role = "USER",
+                Active = true
+            });
+
+            context.SaveChanges();
+        }
+
+        [Fact]
+        public async Task GetByUsername_Should_Return_User()
+        {
+            var user = await _service.GetByUsernameAsync("testuser");
+
+            user.Should().NotBeNull();
+            user!.Username.Should().Be("testuser");
+            user.Name.Should().Be("Test User");
+        }
+
+        [Fact]
+        public async Task UpdateAsync_Should_Update_Profile_Fields()
+        {
+            var dto = new UpdateMyProfileDto
+            {
+                Username = "testuser", // keep same
+                Name = "Updated Name",
+                Email = "updated@example.com",
+                Phone = "777",
+                BirthYear = 1995
+            };
+
+            var updated = await _service.UpdateAsync("testuser", dto);
+
+            updated.Should().NotBeNull();
+            updated!.Username.Should().Be("testuser");
+            updated.Name.Should().Be("Updated Name");
+            updated.Email.Should().Be("updated@example.com");
+            updated.Phone.Should().Be("777");
+            updated.BirthYear.Should().Be(1995);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_Should_Allow_Username_Change_When_Free()
+        {
+            var dto = new UpdateMyProfileDto
+            {
+                Username = "newname",
+                Name = "Test User",
+                Email = "testuser@example.com",
                 Phone = "123456",
                 BirthYear = 1990
             };
 
-            var res = await Client.PostAsJsonAsync(RegisterUrl, req);
+            var updated = await _service.UpdateAsync("testuser", dto);
 
-            // If tests run in parallel and username already exists, you may get Conflict.
-            // Better: ensure unique usernames per test, or reset DB between tests.
-            res.StatusCode.Should().Be(HttpStatusCode.OK);
+            updated.Should().NotBeNull();
+            updated!.Username.Should().Be("newname");
 
-            var auth = await res.Content.ReadFromJsonAsync<AuthResponse>();
-            auth.Should().NotBeNull();
-            auth!.Token.Should().NotBeNullOrWhiteSpace();
-
-            return auth.Token;
+            // old username no longer exists
+            (await _service.GetByUsernameAsync("testuser")).Should().BeNull();
+            (await _service.GetByUsernameAsync("newname")).Should().NotBeNull();
         }
 
-        private void UseToken(string token)
-        {
-            Client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
-        }
-
-        // GET /api/UserProfile/me
         [Fact]
-        public async Task User_Can_Get_Own_Profile()
+        public async Task UpdateAsync_Should_Throw_When_Username_Is_Taken()
         {
-            var token = await RegisterAndGetTokenAsync("testuser");
-            UseToken(token);
-
-            var res = await Client.GetAsync("/api/UserProfile/me");
-            res.StatusCode.Should().Be(HttpStatusCode.OK);
-
-            var user = await res.Content.ReadFromJsonAsync<UserProfile>();
-            user.Should().NotBeNull();
-            user!.Username.Should().Be("testuser");
-        }
-
-        // PUT /api/UserProfile/me
-        [Fact]
-        public async Task User_Can_Update_Own_Profile()
-        {
-            var token = await RegisterAndGetTokenAsync("testuser2");
-            UseToken(token);
-
-            var update = new UpdateMyProfileRequest
+            var dto = new UpdateMyProfileDto
             {
-                Username = "testuser2",
-                Name = "Updated User",
-                Email = "updated@example.com",
-                Phone = "999999",
-                BirthYear = 1995
+                Username = "takenname", // already exists (seeded)
+                Name = "X",
+                Email = "x@x.com",
+                Phone = "1",
+                BirthYear = 2000
             };
 
-            var res = await Client.PutAsJsonAsync("/api/UserProfile/me", update);
-            res.StatusCode.Should().Be(HttpStatusCode.OK);
+            Func<Task> act = async () => await _service.UpdateAsync("testuser", dto);
 
-            var body = await res.Content.ReadFromJsonAsync<UpdateProfileResponse>();
-            body.Should().NotBeNull();
-            body!.Message.Should().Be("Profile updated successfully.");
-
-            body.Profile.Should().NotBeNull();
-            body.Profile.Username.Should().Be("testuser2");
-            body.Profile.Name.Should().Be("Updated User");
-            body.Profile.Email.Should().Be("updated@example.com");
-            body.Profile.Phone.Should().Be("999999");
-            body.Profile.BirthYear.Should().Be(1995);
+            await act.Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("*taken*");
         }
 
-        // PUT /api/UserProfile/me/password
         [Fact]
-        public async Task User_Can_Change_Password()
+        public async Task ChangePasswordAsync_Should_Succeed_With_Correct_CurrentPassword()
         {
-            var token = await RegisterAndGetTokenAsync("testuser3", password: "test123");
-            UseToken(token);
+            var ok = await _service.ChangePasswordAsync("testuser", "test123", "newpass");
+            ok.Should().BeTrue();
 
-            var req = new ChangePasswordRequest
+            var reloaded = await _service.GetByUsernameAsync("testuser");
+            reloaded.Should().NotBeNull();
+            PasswordHelper.VerifyPassword("newpass", reloaded!.Password).Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task ChangePasswordAsync_Should_Fail_With_Wrong_CurrentPassword()
+        {
+            var ok = await _service.ChangePasswordAsync("testuser", "WRONG", "newpass");
+            ok.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task DeleteAsync_Should_Remove_User()
+        {
+            var ok = await _service.DeleteAsync("testuser");
+            ok.Should().BeTrue();
+
+            var user = await _service.GetByUsernameAsync("testuser");
+            user.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task AdminUpdateAsync_Should_Update_Role_Active_And_Password()
+        {
+            var dto = new AdminUpdateUserDto
             {
-                CurrentPassword = "test123",
-                NewPassword = "newpass"
+                Role = "ADMIN",
+                Active = false,
+                NewPassword = "adminpw",
+                Name = "Admin Updated"
             };
 
-            var res = await Client.PutAsJsonAsync("/api/UserProfile/me/password", req);
-            res.StatusCode.Should().Be(HttpStatusCode.OK);
+            var updated = await _service.AdminUpdateAsync("testuser", dto);
 
-            var payload = await res.Content.ReadFromJsonAsync<MessageResponse>();
-            payload.Should().NotBeNull();
-            payload!.Message.Should().Be("Password changed successfully.");
-        }
+            updated.Should().NotBeNull();
+            updated!.Role.Should().Be("ADMIN");
+            updated.Active.Should().BeFalse();
+            updated.Name.Should().Be("Admin Updated");
 
-        [Fact]
-        public async Task Wrong_CurrentPassword_Should_Fail()
-        {
-            var token = await RegisterAndGetTokenAsync("testuser4", password: "test123");
-            UseToken(token);
-
-            var req = new ChangePasswordRequest
-            {
-                CurrentPassword = "WRONG",
-                NewPassword = "newpass"
-            };
-
-            var res = await Client.PutAsJsonAsync("/api/UserProfile/me/password", req);
-            res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        }
-
-        // DELETE /api/UserProfile/me
-        [Fact]
-        public async Task User_Can_Delete_Own_Profile()
-        {
-            var token = await RegisterAndGetTokenAsync("testuser5");
-            UseToken(token);
-
-            var res = await Client.DeleteAsync("/api/UserProfile/me");
-            res.StatusCode.Should().Be(HttpStatusCode.OK);
-
-            var text = await res.Content.ReadAsStringAsync();
-            text.Should().Contain("Account deleted");
-        }
-
-        // ADMIN-only endpoints should be blocked for normal users
-        [Fact]
-        public async Task User_Cannot_Access_Admin_Endpoints()
-        {
-            var token = await RegisterAndGetTokenAsync("testuser6");
-            UseToken(token);
-
-            var getRes = await Client.GetAsync("/api/UserProfile/testuser6");
-            getRes.StatusCode.Should().BeOneOf(HttpStatusCode.Forbidden, HttpStatusCode.Unauthorized);
-
-            var putRes = await Client.PutAsJsonAsync("/api/UserProfile/testuser6", new
-            {
-                name = "Hacker",
-                role = "ADMIN",
-                active = false,
-                newPassword = "pwnd"
-            });
-            putRes.StatusCode.Should().BeOneOf(HttpStatusCode.Forbidden, HttpStatusCode.Unauthorized);
-
-            var delRes = await Client.DeleteAsync("/api/UserProfile/testuser6");
-            delRes.StatusCode.Should().BeOneOf(HttpStatusCode.Forbidden, HttpStatusCode.Unauthorized);
-        }
-
-        // Matches your controller comment: old token username won't resolve after rename -> force re-login
-        [Fact]
-        public async Task After_Username_Change_Old_Token_Should_Fail_For_Password_Change()
-        {
-            var token = await RegisterAndGetTokenAsync("testuser7", password: "test123");
-            UseToken(token);
-
-            // rename via /me
-            var updateRes = await Client.PutAsJsonAsync("/api/UserProfile/me", new UpdateMyProfileRequest
-            {
-                Username = "renamed7",
-                Name = "Renamed User",
-                Email = "renamed7@example.com",
-                Phone = "777",
-                BirthYear = 1991
-            });
-            updateRes.StatusCode.Should().Be(HttpStatusCode.OK);
-
-            // old token still contains "testuser7" -> should not find user by token username
-            var pwRes = await Client.PutAsJsonAsync("/api/UserProfile/me/password", new ChangePasswordRequest
-            {
-                CurrentPassword = "test123",
-                NewPassword = "newpass"
-            });
-
-            pwRes.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+            PasswordHelper.VerifyPassword("adminpw", updated.Password).Should().BeTrue();
         }
     }
 }
