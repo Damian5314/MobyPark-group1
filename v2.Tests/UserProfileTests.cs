@@ -11,6 +11,9 @@ namespace v2.Tests
     {
         private const string RegisterUrl = "/api/Auth/register"; // <-- change if your route differs
 
+        // Generate unique username for each test run
+        private static string UniqueUsername(string prefix = "user") => $"{prefix}_{Guid.NewGuid():N}";
+
         // Matches the register JSON you provided
         private class RegisterRequest
         {
@@ -89,7 +92,8 @@ namespace v2.Tests
         [Fact]
         public async Task User_Can_Get_Own_Profile()
         {
-            var token = await RegisterAndGetTokenAsync("testuser");
+            var username = UniqueUsername("testuser");
+            var token = await RegisterAndGetTokenAsync(username);
             UseToken(token);
 
             var res = await Client.GetAsync("/api/UserProfile/me");
@@ -97,14 +101,14 @@ namespace v2.Tests
 
             var user = await res.Content.ReadFromJsonAsync<UserProfile>();
             user.Should().NotBeNull();
-            user!.Username.Should().Be("testuser");
+            user!.Username.Should().Be(username);
         }
 
         // PUT /api/UserProfile/me
         [Fact]
         public async Task User_Can_Update_Own_Profile()
         {
-            var token = await RegisterAndGetTokenAsync("testuser2");
+            var token = await RegisterAndGetTokenAsync(UniqueUsername("testuser2"));
             UseToken(token);
 
             var update = new UpdateMyProfileRequest
@@ -135,7 +139,7 @@ namespace v2.Tests
         [Fact]
         public async Task User_Can_Change_Password()
         {
-            var token = await RegisterAndGetTokenAsync("testuser3", password: "test123");
+            var token = await RegisterAndGetTokenAsync(UniqueUsername("testuser3"), password: "test123");
             UseToken(token);
 
             var req = new ChangePasswordRequest
@@ -155,7 +159,7 @@ namespace v2.Tests
         [Fact]
         public async Task Wrong_CurrentPassword_Should_Fail()
         {
-            var token = await RegisterAndGetTokenAsync("testuser4", password: "test123");
+            var token = await RegisterAndGetTokenAsync(UniqueUsername("testuser4"), password: "test123");
             UseToken(token);
 
             var req = new ChangePasswordRequest
@@ -172,7 +176,7 @@ namespace v2.Tests
         [Fact]
         public async Task User_Can_Delete_Own_Profile()
         {
-            var token = await RegisterAndGetTokenAsync("testuser5");
+            var token = await RegisterAndGetTokenAsync(UniqueUsername("testuser5"));
             UseToken(token);
 
             var res = await Client.DeleteAsync("/api/UserProfile/me");
@@ -186,7 +190,7 @@ namespace v2.Tests
         [Fact]
         public async Task User_Cannot_Access_Admin_Endpoints()
         {
-            var token = await RegisterAndGetTokenAsync("testuser6");
+            var token = await RegisterAndGetTokenAsync(UniqueUsername("testuser6"));
             UseToken(token);
 
             var getRes = await Client.GetAsync("/api/UserProfile/testuser6");
@@ -209,7 +213,7 @@ namespace v2.Tests
         [Fact]
         public async Task After_Username_Change_Old_Token_Should_Fail_For_Password_Change()
         {
-            var token = await RegisterAndGetTokenAsync("testuser7", password: "test123");
+            var token = await RegisterAndGetTokenAsync(UniqueUsername("testuser7"), password: "test123");
             UseToken(token);
 
             // rename via /me

@@ -14,13 +14,13 @@ namespace v2.Services
         private readonly AppDbContext _db;
 
         // token → username
-        private readonly Dictionary<string, string> _sessions = new();
+        private static readonly Dictionary<string, string> _sessions = new();
 
         // username → token
-        private readonly Dictionary<string, string> _userSessions = new();
+        private static readonly Dictionary<string, string> _userSessions = new();
 
         // currently logged-in user's token (for automatic logout)
-        private string? _currentUserToken;
+        private static string? _currentUserToken;
 
         public AuthService(AppDbContext db)
         {

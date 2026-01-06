@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using v2.Data;
 using v2.Services;
@@ -8,7 +9,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql("Host=localhost;Port=5432;Database=mobypark;Username=postgres;Password=postgres"));
 
-builder.Services.AddSingleton<IAuthService, AuthService>();
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IBillingService, BillingService>();
 builder.Services.AddScoped<IUserProfileService, UserProfileService>();
 builder.Services.AddScoped<IVehicleService, VehicleService>();
@@ -16,6 +17,9 @@ builder.Services.AddScoped<IPaymentService, PaymentService>();
 builder.Services.AddScoped<IParkingSessionService, ParkingSessionService>();
 builder.Services.AddScoped<IParkingLotService, ParkingLotService>();
 builder.Services.AddScoped<IReservationService, ReservationService>();
+
+builder.Services.AddAuthentication("TokenAuth")
+    .AddScheme<AuthenticationSchemeOptions, v2.Security.TokenAuthHandler>("TokenAuth", null);
 
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();

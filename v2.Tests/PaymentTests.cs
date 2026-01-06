@@ -13,6 +13,7 @@ namespace v2.Tests
     public class PaymentTests : IClassFixture<WebApplicationFactory<Program>>
     {
         private readonly HttpClient _client;
+        private static string UniqueUsername(string prefix = "user") => $"{prefix}_{Guid.NewGuid():N}";
 
         public PaymentTests(WebApplicationFactory<Program> factory)
         {
@@ -85,12 +86,13 @@ namespace v2.Tests
         [Fact]
         public async Task GetByInitiator_Should_Return_Payments_With_Token()
         {
+            var username = UniqueUsername("payment_init");
             var registerResponse = await _client.PostAsJsonAsync("/api/Auth/register", new RegisterRequest
             {
-                Username = "payment_initiator_user",
+                Username = username,
                 Password = "test123",
                 Name = "Payment Initiator User",
-                Email = "paymentinitiator@test.com",
+                Email = $"{username}@test.com",
                 Phone = "+31612345662",
                 BirthYear = 1990
             });
@@ -112,12 +114,13 @@ namespace v2.Tests
         [Fact]
         public async Task Delete_Should_Return_NotFound_For_Nonexistent_Payment()
         {
+            var username = UniqueUsername("payment_del");
             var registerResponse = await _client.PostAsJsonAsync("/api/Auth/register", new RegisterRequest
             {
-                Username = "payment_delete_user",
+                Username = username,
                 Password = "test123",
                 Name = "Payment Delete User",
-                Email = "paymentdelete@test.com",
+                Email = $"{username}@test.com",
                 Phone = "+31612345663",
                 BirthYear = 1990
             });
