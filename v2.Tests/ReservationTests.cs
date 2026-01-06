@@ -1,52 +1,86 @@
-using FluentAssertions;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using v2.Data;
 using v2.Models;
 using v2.Services;
 using Xunit;
+using FluentAssertions;
 
 namespace v2.Tests
 {
     public class ReservationServiceTests
     {
-        private readonly AppDbContext _context;
-        private readonly ReservationService _service;
+        private ReservationService _service;
+        private AppDbContext _context;
+        private Mock<IParkingSessionService> _parkingSessionMock;
 
         public ReservationServiceTests()
         {
             var options = new DbContextOptionsBuilder<AppDbContext>()
-                .UseInMemoryDatabase($"ReservationDb_{Guid.NewGuid()}")
+                .UseInMemoryDatabase(Guid.NewGuid().ToString())
                 .Options;
 
             _context = new AppDbContext(options);
+            _parkingSessionMock = new Mock<IParkingSessionService>();
 
             SeedDatabase(_context);
 
-            var parkingSessionService = new FakeParkingSessionService();
-
-            _service = new ReservationService(_context, parkingSessionService);
+            _service = new ReservationService(_context, _parkingSessionMock.Object);
         }
 
-        private static void SeedDatabase(AppDbContext context)
+        private void SeedDatabase(AppDbContext context)
         {
+            context.Database.EnsureDeleted();
             context.Database.EnsureCreated();
 
-            context.ParkingLots.Add(new ParkingLot
-            {
-                Id = 1,
-                Name = "Lot 1",
-                Capacity = 5,
-                Reserved = 0,
-                Tariff = 2,
-                DayTariff = 20,
-                CreatedAt = DateTime.UtcNow
-            });
+            // Seed Parking Lots
+            context.ParkingLots.AddRange(
+                new ParkingLot
+                {
+                    Id = 1,
+                    Name = "Lot A",
+                    Capacity = 2,
+                    Reserved = 0,
+                    Address = "123 Main St",
+                    Location = "City Center",
+                    Tariff = 5,
+                    DayTariff = 20
+                }
+            );
 
-            context.Vehicles.Add(new Vehicle
-            {
-                Id = 1,
-                LicensePlate = "AA-11-BB"
-            });
+            // Seed Vehicles
+            context.Vehicles.AddRange(
+                new Vehicle
+                {
+                    Id = 1,
+                    UserId = 1,
+                    LicensePlate = "ABC123",
+                    Make = "Toyota",
+                    Model = "Corolla",
+                    Color = "Blue",
+                    Year = 2020,
+                    CreatedAt = DateTime.UtcNow
+                }
+            );
+
+            // Seed Reservations
+            context.Reservations.AddRange(
+                new Reservation
+                {
+                    Id = 1,
+                    UserId = 1,
+                    ParkingLotId = 1,
+                    VehicleId = 1,
+                    StartTime = DateTime.UtcNow.AddHours(1),
+                    EndTime = DateTime.UtcNow.AddHours(2),
+                    Status = "Active",
+                    CreatedAt = DateTime.UtcNow,
+                    Cost = 0
+                }
+            );
 
             context.SaveChanges();
         }
@@ -56,17 +90,21 @@ namespace v2.Tests
         {
             var dto = new ReservationCreateDto
             {
-                UserId = 1,
                 ParkingLotId = 1,
+                UserId = 1,
                 VehicleId = 1,
-                StartTime = DateTime.UtcNow,
-                EndTime = DateTime.UtcNow.AddHours(2)
+                StartTime = DateTime.UtcNow.AddHours(1),
+                EndTime = DateTime.UtcNow.AddHours(2),
+                Status = "Active"
             };
 
             var reservation = await _service.CreateAsync(dto);
 
             reservation.Should().NotBeNull();
             reservation.Status.Should().Be("Active");
+
+            var lot = await _context.ParkingLots.FindAsync(1);
+            lot.Reserved.Should().Be(1);
         }
 
         [Fact]
@@ -74,24 +112,34 @@ namespace v2.Tests
         {
             var reservation = await _service.CreateAsync(new ReservationCreateDto
             {
-                UserId = 1,
                 ParkingLotId = 1,
+                UserId = 1,
                 VehicleId = 1,
-                StartTime = DateTime.UtcNow,
-                EndTime = DateTime.UtcNow.AddHours(1)
+                StartTime = DateTime.UtcNow.AddHours(1),
+                EndTime = DateTime.UtcNow.AddHours(2)
             });
 
-            var updateDto = new ReservationCreateDto
+            _parkingSessionMock.Setup(p => p.CreateFromReservationAsync(
+                It.IsAny<int>(),
+                It.IsAny<string>(),
+                It.IsAny<string>(),
+                It.IsAny<DateTime>(),
+                It.IsAny<DateTime>()
+            )).ReturnsAsync(new ParkingSession { Id = 1 });
+
+            var updated = await _service.UpdateAsync(reservation.Id, new ReservationCreateDto
             {
+                ParkingLotId = 1,
+                UserId = 1,
                 VehicleId = 1,
                 StartTime = reservation.StartTime,
                 EndTime = reservation.EndTime,
                 Status = "Confirmed"
-            };
-
-            var updated = await _service.UpdateAsync(reservation.Id, updateDto);
+            });
 
             updated.Status.Should().Be("Confirmed");
+            _parkingSessionMock.Verify(p => p.CreateFromReservationAsync(
+                1, "ABC123", "1", reservation.StartTime, reservation.EndTime), Times.Once);
         }
 
         [Fact]
@@ -99,50 +147,21 @@ namespace v2.Tests
         {
             var reservation = await _service.CreateAsync(new ReservationCreateDto
             {
-                UserId = 1,
                 ParkingLotId = 1,
+                UserId = 1,
                 VehicleId = 1,
                 StartTime = DateTime.UtcNow,
                 EndTime = DateTime.UtcNow.AddHours(1)
             });
 
             var result = await _service.DeleteAsync(reservation.Id);
-
             result.Should().BeTrue();
-            (await _context.Reservations.FindAsync(reservation.Id))
-                .Should().BeNull();
+
+            var dbReservation = await _context.Reservations.FindAsync(reservation.Id);
+            dbReservation.Should().BeNull();
+
+            var lot = await _context.ParkingLots.FindAsync(1);
+            lot.Reserved.Should().Be(0);
         }
-    }
-
-    internal class FakeParkingSessionService : IParkingSessionService
-    {
-        public Task<ParkingSession> CreateFromReservationAsync(
-            int parkingLotId,
-            string licensePlate,
-            string username,
-            DateTime startTime,
-            DateTime endTime)
-        {
-            return Task.FromResult(new ParkingSession
-            {
-                ParkingLotId = parkingLotId,
-                LicensePlate = licensePlate,
-                Username = username,
-                Started = startTime,
-                Stopped = endTime
-            });
-        }
-
-        public Task<ParkingSession> StartSessionAsync(int parkingLotId, string licensePlate, string username) =>
-            throw new NotImplementedException();
-
-        public Task<ParkingSession> StopSessionAsync(int sessionId) =>
-            throw new NotImplementedException();
-
-        public Task<ParkingSession?> GetByIdAsync(int sessionId) =>
-            throw new NotImplementedException();
-
-        public Task<IEnumerable<ParkingSession>> GetActiveSessionsAsync() =>
-            throw new NotImplementedException();
     }
 }
