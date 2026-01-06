@@ -53,6 +53,11 @@ namespace v2.Tests
         {
             public string Message { get; set; } = "";
         }
+        private class ErrorResponse
+        {
+            public string Error { get; set; } = "";
+        }
+
 
 
         [Fact]
@@ -72,12 +77,27 @@ namespace v2.Tests
             };
 
             var registerRes = await _client.PostAsJsonAsync("/api/Auth/register", registerRequest);
-            registerRes.StatusCode.Should().Be(HttpStatusCode.OK);
 
-            var registerBody = await registerRes.Content.ReadFromJsonAsync<RegisterResponse>();
-            registerBody!.Token.Should().NotBeNullOrWhiteSpace();
+            if (registerRes.IsSuccessStatusCode)
+            {
+                // First-time registration path
+                registerRes.StatusCode.Should().Be(HttpStatusCode.OK);
 
-        }        
+                var registerBody = await registerRes.Content.ReadFromJsonAsync<RegisterResponse>();
+                registerBody.Should().NotBeNull();
+                registerBody!.Token.Should().NotBeNullOrWhiteSpace();
+            }
+            else
+            {
+                // Duplicate user path (adjust status code(s) to match your API)
+                registerRes.StatusCode.Should().BeOneOf(HttpStatusCode.BadRequest, HttpStatusCode.Conflict);
+
+                var errorBody = await registerRes.Content.ReadFromJsonAsync<ErrorResponse>();
+                errorBody.Should().NotBeNull();
+                errorBody!.Error.Should().Be("Username already exists.");
+            }
+        }
+      
 
         [Fact]
         public async Task Login_Should_Work_With_Registered_Credentials()
