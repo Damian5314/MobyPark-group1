@@ -1,166 +1,199 @@
-using System.Net;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
+using v2.Data;
 using v2.Models;
 using v2.Services;
 using Xunit;
 
 namespace v2.Tests
 {
-    public class BillingTests : IClassFixture<WebApplicationFactory<Program>>
+    public class BillingTests
     {
-        private readonly HttpClient _client;
-        private static string UniqueUsername(string prefix = "user") => $"{prefix}_{Guid.NewGuid():N}";
+        private readonly BillingService _service;
+        private readonly AppDbContext _context;
 
-        public BillingTests(WebApplicationFactory<Program> factory)
+        public BillingTests()
         {
-            var f = factory.WithWebHostBuilder(builder =>
-            {
-                builder.ConfigureServices(services =>
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseInMemoryDatabase(Guid.NewGuid().ToString())
+                .Options;
+
+            _context = new AppDbContext(options);
+            SeedDatabase(_context);
+
+            _service = new BillingService(_context);
+        }
+
+        private void SeedDatabase(AppDbContext context)
+        {
+            context.Database.EnsureDeleted();
+            context.Database.EnsureCreated();
+
+            // Seed Users
+            context.Users.AddRange(
+                new UserProfile
                 {
-                    var billingDescriptors = services
-                        .Where(d => d.ServiceType == typeof(IBillingService))
-                        .ToList();
+                    Id = 1,
+                    Username = "user1",
+                    Password = "password123",
+                    Role = "User",
+                    Name = "Test User 1",
+                    Email = "user1@test.com",
+                    Phone = "+31612345678",
+                    BirthYear = 1990,
+                    Active = true
+                },
+                new UserProfile
+                {
+                    Id = 2,
+                    Username = "user2",
+                    Password = "password123",
+                    Role = "User",
+                    Name = "Test User 2",
+                    Email = "user2@test.com",
+                    Phone = "+31612345679",
+                    BirthYear = 1985,
+                    Active = true
+                },
+                new UserProfile
+                {
+                    Id = 99999,
+                    Username = "user_nonexistent",
+                    Password = "password123",
+                    Role = "User",
+                    Name = "Nonexistent User",
+                    Email = "nonexistent@test.com",
+                    Phone = "+31600000000",
+                    BirthYear = 1980,
+                    Active = true
+                }
+            );
 
-                    foreach (var d in billingDescriptors)
-                        services.Remove(d);
+            // Seed Payments
+            context.Payments.AddRange(
+                new Payment
+                {
+                    Id = 1,
+                    Amount = 10.50m,
+                    Transaction = "trans1",
+                    Hash = "hash1",
+                    Initiator = "user1",
+                    CreatedAt = DateTime.UtcNow,
+                    Completed = DateTime.UtcNow,
+                    SessionId = "1",
+                    TData = new TData
+                    {
+                        Amount = 10.50m,
+                        Date = DateTime.UtcNow,
+                        Method = "iDEAL",
+                        Issuer = "user1",
+                        Bank = "ING"
+                    }
+                },
+                new Payment
+                {
+                    Id = 2,
+                    Amount = 20.00m,
+                    Transaction = "trans2",
+                    Hash = "hash2",
+                    Initiator = "user2",
+                    CreatedAt = DateTime.UtcNow,
+                    Completed = DateTime.UtcNow,
+                    SessionId = "2",
+                    TData = new TData
+                    {
+                        Amount = 20.00m,
+                        Date = DateTime.UtcNow,
+                        Method = "Credit Card",
+                        Issuer = "user2",
+                        Bank = "Rabobank"
+                    }
+                },
+                new Payment
+                {
+                    Id = 3,
+                    Amount = 15.75m,
+                    Transaction = "trans3",
+                    Hash = "hash3",
+                    Initiator = "user1",
+                    CreatedAt = DateTime.UtcNow,
+                    Completed = DateTime.UtcNow,
+                    SessionId = "3",
+                    TData = new TData
+                    {
+                        Amount = 15.75m,
+                        Date = DateTime.UtcNow,
+                        Method = "iDEAL",
+                        Issuer = "user1",
+                        Bank = "ABN AMRO"
+                    }
+                }
+            );
 
-                    services.AddScoped<IBillingService, BillingService>();
-                });
-            });
-
-            _client = f.CreateClient();
+            context.SaveChanges();
         }
 
         [Fact]
-        public async Task GetAll_Should_Return_Unauthorized_Without_Admin_Token()
+        public async Task GetAll_Should_Return_All_Billings_Grouped_By_Initiator()
         {
-            var response = await _client.GetAsync("/api/Billing");
-
-            // Without token or with insufficient permissions, expect 401 or 403
-            response.StatusCode.Should().BeOneOf(HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden);
-        }
-
-        [Fact]
-        public async Task GetAll_Should_Return_OK_With_Admin_Token()
-        {
-            var username = UniqueUsername("admin_billing");
-            var registerResponse = await _client.PostAsJsonAsync("/api/Auth/register", new RegisterRequest
-            {
-                Username = username,
-                Password = "admin123",
-                Name = "Admin User",
-                Email = $"{username}@test.com",
-                Phone = "+31612345678",
-                BirthYear = 1990
-            });
-
-            var authData = await registerResponse.Content.ReadFromJsonAsync<AuthResponse>();
-            _client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", authData!.Token);
-
-            var response = await _client.GetAsync("/api/Billing");
-
-            // Newly registered users may not have admin role - accept 200 OK or 403 Forbidden
-            response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Forbidden);
-        }
-
-        [Fact]
-        public async Task GetByUserId_Should_Return_Unauthorized_Without_Token()
-        {
-            var response = await _client.GetAsync("/api/Billing/user/1");
-
-            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
-        }
-
-        [Fact]
-        public async Task GetByUserId_Should_Return_NotFound_For_Nonexistent_User()
-        {
-            var username = UniqueUsername("user_404");
-            var registerResponse = await _client.PostAsJsonAsync("/api/Auth/register", new RegisterRequest
-            {
-                Username = username,
-                Password = "test123",
-                Name = "Test User",
-                Email = $"{username}@test.com",
-                Phone = "+31612345679",
-                BirthYear = 1990
-            });
-
-            var authData = await registerResponse.Content.ReadFromJsonAsync<AuthResponse>();
-            _client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", authData!.Token);
-
-            var response = await _client.GetAsync("/api/Billing/user/99999");
-
-            // User may lack admin rights, expect 403 Forbidden or 404 NotFound
-            response.StatusCode.Should().BeOneOf(HttpStatusCode.NotFound, HttpStatusCode.Forbidden);
-        }
-
-        [Fact]
-        public async Task GetByUserId_Should_Return_NotFound_For_User_Without_Payments()
-        {
-            var username = UniqueUsername("user_nopay");
-            var registerResponse = await _client.PostAsJsonAsync("/api/Auth/register", new RegisterRequest
-            {
-                Username = username,
-                Password = "test123",
-                Name = "User Without Payments",
-                Email = $"{username}@test.com",
-                Phone = "+31612345660",
-                BirthYear = 1990
-            });
-
-            registerResponse.EnsureSuccessStatusCode();
-            var authData = await registerResponse.Content.ReadFromJsonAsync<AuthResponse>();
-            _client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", authData!.Token);
-
-            var getUserResponse = await _client.GetAsync("/api/UserProfile/me");
-            getUserResponse.EnsureSuccessStatusCode();
-            var userData = await getUserResponse.Content.ReadFromJsonAsync<UserProfile>();
-
-            var response = await _client.GetAsync($"/api/Billing/user/{userData!.Id}");
-
-            // User may lack admin rights or no payments exist, expect 404, 401, or 403
-            response.StatusCode.Should().BeOneOf(HttpStatusCode.NotFound, HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden);
-        }
-
-        [Fact]
-        public async Task GetAll_Should_Return_List_Of_Billings()
-        {
-            var username = UniqueUsername("billing_list");
-            var registerResponse = await _client.PostAsJsonAsync("/api/Auth/register", new RegisterRequest
-            {
-                Username = username,
-                Password = "test123",
-                Name = "Billing List User",
-                Email = $"{username}@test.com",
-                Phone = "+31612345661",
-                BirthYear = 1990
-            });
-
-            registerResponse.EnsureSuccessStatusCode();
-            var authData = await registerResponse.Content.ReadFromJsonAsync<AuthResponse>();
-            _client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", authData!.Token);
-
-            var response = await _client.GetAsync("/api/Billing");
-
-            // User may need admin role - accept 200 OK or 403 Forbidden
-            if (response.StatusCode == HttpStatusCode.Forbidden)
-            {
-                // Test passes - user correctly denied access
-                return;
-            }
-            response.EnsureSuccessStatusCode();
-            var billings = await response.Content.ReadFromJsonAsync<List<Billing>>();
+            var billings = await _service.GetAllAsync();
 
             billings.Should().NotBeNull();
-            billings.Should().BeOfType<List<Billing>>();
+            billings.Should().HaveCount(2); // user1 and user2
+
+            var user1Billing = billings.FirstOrDefault(b => b.User == "user1");
+            user1Billing.Should().NotBeNull();
+            user1Billing!.Payments.Should().HaveCount(2); // 2 payments for user1
+            user1Billing.TotalAmount.Should().Be(26.25m); // 10.50 + 15.75
+
+            var user2Billing = billings.FirstOrDefault(b => b.User == "user2");
+            user2Billing.Should().NotBeNull();
+            user2Billing!.Payments.Should().HaveCount(1); // 1 payment for user2
+            user2Billing.TotalAmount.Should().Be(20.00m);
+        }
+
+        [Fact]
+        public async Task GetByUserId_Should_Return_Billing_For_Existing_User()
+        {
+            var billing = await _service.GetByUserIdAsync(1);
+
+            billing.Should().NotBeNull();
+            billing!.User.Should().Be("user1");
+            billing.Payments.Should().HaveCount(2);
+            billing.TotalAmount.Should().Be(26.25m);
+        }
+
+        [Fact]
+        public async Task GetByUserId_Should_Return_Null_For_Nonexistent_User()
+        {
+            var billing = await _service.GetByUserIdAsync(12345);
+
+            billing.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GetByUserId_Should_Return_Null_For_User_Without_Payments()
+        {
+            var billing = await _service.GetByUserIdAsync(99999);
+
+            billing.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GetByUserId_Should_Return_Correct_Payment_Details()
+        {
+            var billing = await _service.GetByUserIdAsync(2);
+
+            billing.Should().NotBeNull();
+            billing!.User.Should().Be("user2");
+            billing.Payments.Should().HaveCount(1);
+
+            var payment = billing.Payments.First();
+            payment.Amount.Should().Be(20.00m);
+            payment.Initiator.Should().Be("user2");
         }
     }
 }

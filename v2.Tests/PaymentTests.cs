@@ -1,146 +1,298 @@
-using System.Net;
-using System.Net.Http.Headers;
-using System.Net.Http.Json;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using FluentAssertions;
-using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
+using v2.Data;
 using v2.Models;
 using v2.Services;
 using Xunit;
 
 namespace v2.Tests
 {
-    public class PaymentTests : IClassFixture<WebApplicationFactory<Program>>
+    public class PaymentTests
     {
-        private readonly HttpClient _client;
-        private static string UniqueUsername(string prefix = "user") => $"{prefix}_{Guid.NewGuid():N}";
+        private readonly PaymentService _service;
+        private readonly AppDbContext _context;
 
-        public PaymentTests(WebApplicationFactory<Program> factory)
+        public PaymentTests()
         {
-            var f = factory.WithWebHostBuilder(builder =>
-            {
-                builder.ConfigureServices(services =>
+            var options = new DbContextOptionsBuilder<AppDbContext>()
+                .UseInMemoryDatabase(Guid.NewGuid().ToString())
+                .Options;
+
+            _context = new AppDbContext(options);
+            SeedDatabase(_context);
+
+            _service = new PaymentService(_context);
+        }
+
+        private void SeedDatabase(AppDbContext context)
+        {
+            context.Database.EnsureDeleted();
+            context.Database.EnsureCreated();
+
+            // Seed Parking Lots
+            context.ParkingLots.AddRange(
+                new ParkingLot
                 {
-                    var paymentDescriptors = services
-                        .Where(d => d.ServiceType == typeof(IPaymentService))
-                        .ToList();
+                    Id = 1,
+                    Name = "Lot A",
+                    Capacity = 10,
+                    Reserved = 0,
+                    Address = "123 Main St",
+                    Location = "City Center",
+                    Tariff = 5,
+                    DayTariff = 20
+                }
+            );
 
-                    foreach (var d in paymentDescriptors)
-                        services.Remove(d);
+            // Seed Parking Sessions
+            context.ParkingSessions.AddRange(
+                new ParkingSession
+                {
+                    Id = 1,
+                    ParkingLotId = 1,
+                    LicensePlate = "XX-YY-99",
+                    Username = "testuser",
+                    Started = DateTime.UtcNow.AddHours(-2),
+                    Stopped = DateTime.UtcNow.AddHours(-1),
+                    DurationMinutes = 60,
+                    Cost = 5.00m,
+                    PaymentStatus = "Pending"
+                },
+                new ParkingSession
+                {
+                    Id = 2,
+                    ParkingLotId = 1,
+                    LicensePlate = "AB-CD-12",
+                    Username = "user1",
+                    Started = DateTime.UtcNow.AddHours(-3),
+                    Stopped = DateTime.UtcNow.AddHours(-2),
+                    DurationMinutes = 60,
+                    Cost = 5.00m,
+                    PaymentStatus = "Pending"
+                }
+            );
 
-                    services.AddScoped<IPaymentService, PaymentService>();
-                });
-            });
+            context.SaveChanges();
 
-            _client = f.CreateClient();
+            // Seed Payments (after SaveChanges to avoid ID conflicts)
+            context.Payments.AddRange(
+                new Payment
+                {
+                    Amount = 10.50m,
+                    Transaction = "trans1",
+                    Hash = "hash1",
+                    Initiator = "testuser",
+                    CreatedAt = DateTime.UtcNow.AddDays(-1),
+                    Completed = DateTime.UtcNow.AddDays(-1),
+                    SessionId = "100",
+                    TData = new TData
+                    {
+                        Amount = 10.50m,
+                        Date = DateTime.UtcNow.AddDays(-1),
+                        Method = "iDEAL",
+                        Issuer = "testuser",
+                        Bank = "ING"
+                    }
+                },
+                new Payment
+                {
+                    Amount = 20.00m,
+                    Transaction = "trans2",
+                    Hash = "hash2",
+                    Initiator = "user1",
+                    CreatedAt = DateTime.UtcNow.AddDays(-2),
+                    Completed = DateTime.UtcNow.AddDays(-2),
+                    SessionId = "200",
+                    TData = new TData
+                    {
+                        Amount = 20.00m,
+                        Date = DateTime.UtcNow.AddDays(-2),
+                        Method = "Credit Card",
+                        Issuer = "user1",
+                        Bank = "Rabobank"
+                    }
+                }
+            );
+
+            context.SaveChanges();
         }
 
         [Fact]
         public async Task GetAll_Should_Return_List_Of_Payments()
         {
-            var response = await _client.GetAsync("/api/Payment");
-
-            response.EnsureSuccessStatusCode();
-            var payments = await response.Content.ReadFromJsonAsync<List<Payment>>();
+            var payments = await _service.GetAllAsync();
 
             payments.Should().NotBeNull();
-            payments.Should().BeOfType<List<Payment>>();
+            payments.Should().HaveCount(2);
+            payments.Should().BeInDescendingOrder(p => p.CreatedAt);
         }
 
         [Fact]
-        public async Task GetById_Should_Return_NotFound_For_Nonexistent_Payment()
+        public async Task GetById_Should_Return_Payment_When_Exists()
         {
-            var response = await _client.GetAsync("/api/Payment/99999");
+            var allPayments = await _service.GetAllAsync();
+            var firstPayment = allPayments.First();
 
-            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            var payment = await _service.GetByIdAsync(firstPayment.Id);
+
+            payment.Should().NotBeNull();
+            payment!.Id.Should().Be(firstPayment.Id);
+            payment.Initiator.Should().Be("testuser");
+            payment.Amount.Should().Be(10.50m);
         }
 
         [Fact]
-        public async Task GetByInitiator_Should_Return_Unauthorized_Without_Admin_Token()
+        public async Task GetById_Should_Return_Null_For_Nonexistent_Payment()
         {
-            var response = await _client.GetAsync("/api/Payment/initiator/testuser");
+            var payment = await _service.GetByIdAsync(99999);
 
-            // Without token or with insufficient permissions, expect 401 or 403
-            response.StatusCode.Should().BeOneOf(HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden);
+            payment.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task GetByInitiator_Should_Return_Payments_For_User()
+        {
+            var payments = await _service.GetByInitiatorAsync("testuser");
+
+            payments.Should().NotBeNull();
+            payments.Should().HaveCount(1);
+            payments.First().Initiator.Should().Be("testuser");
+        }
+
+        [Fact]
+        public async Task GetByInitiator_Should_Return_Empty_For_Unknown_User()
+        {
+            var payments = await _service.GetByInitiatorAsync("unknownuser");
+
+            payments.Should().NotBeNull();
+            payments.Should().BeEmpty();
         }
 
         [Fact]
         public async Task GetUnpaidSessions_Should_Return_List_Of_Sessions()
         {
-            var response = await _client.GetAsync("/api/Payment/unpaid/XX-YY-99");
-
-            response.EnsureSuccessStatusCode();
-            var sessions = await response.Content.ReadFromJsonAsync<List<ParkingSession>>();
+            var sessions = await _service.GetUnpaidSessionsAsync("XX-YY-99");
 
             sessions.Should().NotBeNull();
-            sessions.Should().BeOfType<List<ParkingSession>>();
+            sessions.Should().HaveCount(1);
+            sessions.First().LicensePlate.Should().Be("XX-YY-99");
+            sessions.First().PaymentStatus.Should().Be("Pending");
         }
 
         [Fact]
-        public async Task Delete_Should_Return_Unauthorized_Without_Admin_Token()
+        public async Task GetUnpaidSessions_Should_Return_Empty_For_Unknown_LicensePlate()
         {
-            var response = await _client.DeleteAsync("/api/Payment/1");
+            var sessions = await _service.GetUnpaidSessionsAsync("ZZ-ZZ-00");
 
-            response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+            sessions.Should().NotBeNull();
+            sessions.Should().BeEmpty();
         }
 
         [Fact]
-        public async Task GetByInitiator_Should_Return_Payments_With_Token()
+        public async Task Delete_Should_Remove_Payment_When_Exists()
         {
-            var username = UniqueUsername("payment_init");
-            var registerResponse = await _client.PostAsJsonAsync("/api/Auth/register", new RegisterRequest
-            {
-                Username = username,
-                Password = "test123",
-                Name = "Payment Initiator User",
-                Email = $"{username}@test.com",
-                Phone = "+31612345662",
-                BirthYear = 1990
-            });
+            var allPayments = await _service.GetAllAsync();
+            var paymentToDelete = allPayments.First();
 
-            registerResponse.EnsureSuccessStatusCode();
-            var authData = await registerResponse.Content.ReadFromJsonAsync<AuthResponse>();
-            _client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", authData!.Token);
+            var result = await _service.DeleteAsync(paymentToDelete.Id);
 
-            var response = await _client.GetAsync("/api/Payment/initiator/testuser");
+            result.Should().BeTrue();
 
-            // User may need specific permissions - accept 200 OK or 403 Forbidden
-            if (response.StatusCode == HttpStatusCode.Forbidden)
-            {
-                // Test passes - user correctly denied access
-                return;
-            }
-            response.EnsureSuccessStatusCode();
-            var payments = await response.Content.ReadFromJsonAsync<List<Payment>>();
-
-            payments.Should().NotBeNull();
-            payments.Should().BeOfType<List<Payment>>();
+            var payment = await _context.Payments.FindAsync(paymentToDelete.Id);
+            payment.Should().BeNull();
         }
 
         [Fact]
-        public async Task Delete_Should_Return_NotFound_For_Nonexistent_Payment()
+        public async Task Delete_Should_Return_False_For_Nonexistent_Payment()
         {
-            var username = UniqueUsername("payment_del");
-            var registerResponse = await _client.PostAsJsonAsync("/api/Auth/register", new RegisterRequest
+            var result = await _service.DeleteAsync(99999);
+
+            result.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task PaySingleSession_Should_Create_Payment_And_Update_Session()
+        {
+            var dto = new PaySingleSessionDto
             {
-                Username = username,
-                Password = "test123",
-                Name = "Payment Delete User",
-                Email = $"{username}@test.com",
-                Phone = "+31612345663",
-                BirthYear = 1990
-            });
+                SessionId = 1,
+                LicensePlate = "XX-YY-99",
+                Initiator = "testuser",
+                Method = "iDEAL",
+                Bank = "ING"
+            };
 
-            registerResponse.EnsureSuccessStatusCode();
-            var authData = await registerResponse.Content.ReadFromJsonAsync<AuthResponse>();
-            _client.DefaultRequestHeaders.Authorization =
-                new AuthenticationHeaderValue("Bearer", authData!.Token);
+            var payment = await _service.PaySingleSessionAsync(dto);
 
-            var response = await _client.DeleteAsync("/api/Payment/99999");
+            payment.Should().NotBeNull();
+            payment.Amount.Should().Be(5.00m);
+            payment.Initiator.Should().Be("testuser");
+            payment.SessionId.Should().Be("1");
 
-            // User may lack delete permission, expect 403 Forbidden or 404 NotFound
-            response.StatusCode.Should().BeOneOf(HttpStatusCode.NotFound, HttpStatusCode.Forbidden);
+            var session = await _context.ParkingSessions.FindAsync(1);
+            session.Should().NotBeNull();
+            session!.PaymentStatus.Should().Be("Completed");
+            session.Username.Should().Be("testuser");
+        }
+
+        [Fact]
+        public async Task PaySingleSession_Should_Throw_For_Nonexistent_Session()
+        {
+            var dto = new PaySingleSessionDto
+            {
+                SessionId = 99999,
+                LicensePlate = "XX-YY-99",
+                Initiator = "testuser",
+                Method = "iDEAL",
+                Bank = "ING"
+            };
+
+            Func<Task> act = async () => await _service.PaySingleSessionAsync(dto);
+
+            await act.Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("No unpaid session found for this license plate and session ID");
+        }
+
+        [Fact]
+        public async Task CreateAsync_Should_Create_Payment_For_All_Unpaid_Sessions()
+        {
+            var dto = new PaymentCreateDto
+            {
+                LicensePlate = "XX-YY-99",
+                Initiator = "testuser",
+                Method = "iDEAL",
+                Bank = "ING"
+            };
+
+            var payment = await _service.CreateAsync(dto);
+
+            payment.Should().NotBeNull();
+            payment.Amount.Should().Be(5.00m); // Total of all unpaid sessions for XX-YY-99
+            payment.Initiator.Should().Be("testuser");
+
+            var session = await _context.ParkingSessions.FindAsync(1);
+            session.Should().NotBeNull();
+            session!.PaymentStatus.Should().Be("Paid");
+        }
+
+        [Fact]
+        public async Task CreateAsync_Should_Throw_When_No_Unpaid_Sessions_Found()
+        {
+            var dto = new PaymentCreateDto
+            {
+                LicensePlate = "ZZ-ZZ-00",
+                Initiator = "testuser",
+                Method = "iDEAL",
+                Bank = "ING"
+            };
+
+            Func<Task> act = async () => await _service.CreateAsync(dto);
+
+            await act.Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("No unpaid parking sessions found for license plate ZZ-ZZ-00");
         }
     }
 }
