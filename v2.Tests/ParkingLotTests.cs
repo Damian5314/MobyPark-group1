@@ -33,7 +33,6 @@ namespace v2.Tests.Unit
             {
                 _context.ParkingLots.Add(new ParkingLot
                 {
-                    Id = i,
                     Name = $"Lot {i}",
                     Location = "Amsterdam",
                     Address = $"Street {i}",
@@ -42,6 +41,7 @@ namespace v2.Tests.Unit
                     Tariff = 2.5m,
                     DayTariff = 20m,
                     CreatedAt = DateTime.UtcNow
+                    // DO NOT set Id manually
                 });
             }
 
@@ -60,10 +60,11 @@ namespace v2.Tests.Unit
         [Fact]
         public async Task GetByIdAsync_Should_Return_ParkingLot_When_Exists()
         {
-            var lot = await _service.GetByIdAsync(1);
+            var firstLot = await _context.ParkingLots.FirstAsync();
+            var lot = await _service.GetByIdAsync(firstLot.Id);
 
             lot.Should().NotBeNull();
-            lot!.Name.Should().Be("Lot 1");
+            lot!.Name.Should().Be(firstLot.Name);
         }
 
         [Fact]
