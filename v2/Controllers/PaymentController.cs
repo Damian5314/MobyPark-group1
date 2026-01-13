@@ -58,7 +58,7 @@ public class PaymentController : ControllerBase
         return Ok(sessions);
     }
 
-
+    [AdminOnly]
     [HttpPost("pay-session")]
     public async Task<IActionResult> PaySingleSession([FromBody] PaySingleSessionDto dto)
     {
