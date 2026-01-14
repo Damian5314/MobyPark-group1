@@ -16,6 +16,4 @@ public interface IUserProfileService
     Task<bool> SetPasswordAsync(string username, string newPassword);
     Task<bool> DeleteAsync(string username);
     Task<UserProfile?> AdminUpdateAsync(string targetUsername, AdminUpdateUserDto dto);
-    
-
 }

@@ -28,7 +28,7 @@ namespace v2.Services
         }
 
         // REGISTER
-       public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
+        public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
         {
             var context = new ValidationContext(request);
             Validator.ValidateObject(request, context, validateAllProperties: true);

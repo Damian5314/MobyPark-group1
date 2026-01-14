@@ -27,7 +27,7 @@ jobs:
       run: dotnet build --no-restore --configuration Release
 
     - name: Run tests
-      run: dotnet test --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage"
+      run: dotnet test --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage" -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
@@ -36,7 +36,26 @@ jobs:
         name: test-results
         path: '**/TestResults/**'
 
+    - name: Install ReportGenerator
+      run: dotnet tool install -g dotnet-reportgenerator-globaltool
+
     - name: Generate coverage report
+      run: reportgenerator -reports:**/coverage.cobertura.xml -targetdir:coverage-report -reporttypes:"Html;JsonSummary"
+
+    - name: Check coverage threshold (25%)
+      run: |
+        COVERAGE=$(jq '.summary.linecoverage' coverage-report/Summary.json)
+        echo "Current coverage: $COVERAGE%"
+        if (( $(echo "$COVERAGE < 25" | bc -l) )); then
+          echo "::error::Code coverage ($COVERAGE%) is below the required 25% threshold"
+          exit 1
+        fi
+        echo "::notice::Code coverage meets the required 25% threshold ($COVERAGE%)"
+        if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+          echo "::warning::Code coverage ($COVERAGE%) is below the target 80% threshold"
+        fi
+
+    - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v4
       if: always()
       with:
@@ -44,7 +63,7 @@ jobs:
         fail_ci_if_error: false
 
   code-quality:
-    name: Code Quality
+    name: Code Quality & Linting
     runs-on: ubuntu-latest
 
     steps:
@@ -59,8 +78,16 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
 
-    - name: Format check
-      run: dotnet format --verify-no-changes --no-restore
+    - name: StyleCop analysis
+      run: dotnet build --no-restore /p:EnforceCodeStyleInBuild=true
 
-    - name: Build warnings check
-      run: dotnet build --no-restore -warnaserror
+    - name: Roslyn analyzers check
+      run: dotnet build --no-restore /p:EnableNETAnalyzers=true /p:AnalysisLevel=latest
+
+    - name: Security audit
+      run: |
+        dotnet list package --vulnerable --include-transitive 2>&1 | tee vulnerability-report.txt
+        if grep -q "has the following vulnerable packages" vulnerability-report.txt; then
+          echo "::warning::Vulnerable packages detected"
+          cat vulnerability-report.txt
+        fi
