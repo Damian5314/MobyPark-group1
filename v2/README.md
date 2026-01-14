@@ -1,6 +1,6 @@
 # MobyPark v2 - Setup & Run
 
-## Vereisten
+## Requirements
 
 - [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 - [PostgreSQL](https://www.postgresql.org/download/)
@@ -9,62 +9,62 @@
 
 1. Start PostgreSQL
 
-2. Maak database aan:
-bash
+2. Create database:
+```bash
 psql -U postgres
 CREATE DATABASE mobypark;
 \q
+```
 
-
-3. Run migraties:
-bash
+3. Run migrations:
+```bash
 cd v2
 dotnet ef database update
+```
 
-
-Als dotnet ef niet werkt:
-bash
+If dotnet ef doesn't work:
+```bash
 dotnet tool install --global dotnet-ef
+```
 
+## Running the Application
 
-## Applicatie Runnen
-
-1. Installeer dependencies:
-bash
+1. Install dependencies:
+```bash
 dotnet restore
+```
 
-
-2. Start de applicatie:
-bash
+2. Start the application:
+```bash
 dotnet run
+```
 
-
-Of met testdata:
-bash
+Or with test data:
+```bash
 dotnet run seed
+```
 
-
-3. Open je browser:
+3. Open your browser:
 - API: http://localhost:5000
 - Swagger UI: http://localhost:5000/swagger
 
-## Tests Runnen
+## Running Tests
 
-bash
+```bash
 cd ..
 dotnet test
+```
 
+## Authentication in Swagger
 
-## Authenticatie in Swagger
-
-1. Ga naar http://localhost:5000/swagger
-2. Login via /api/auth/login met:
-   json
+1. Navigate to http://localhost:5000/swagger
+2. Login via /api/auth/login with:
+   ```json
    {
      "email": "admin@mobypark.nl",
      "password": "Admin123!"
    }
-   
-3. Kopieer de token
-4. Klik op "Authorize" knop
-5. Voer in: Bearer [jouw-token]
+   ```
+3. Copy the token
+4. Click the "Authorize" button
+5. Enter: Bearer [your-token]
