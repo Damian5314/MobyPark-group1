@@ -5,6 +5,37 @@
 - [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
 - [PostgreSQL](https://www.postgresql.org/download/)
 
+### Installing PostgreSQL
+
+#### Windows
+1. Download the installer from [PostgreSQL Downloads](https://www.postgresql.org/download/windows/)
+2. Run the installer and follow the setup wizard
+3. Remember the password you set for the postgres user
+4. Default port is 5432 (keep this unless you have a conflict)
+5. Add PostgreSQL to your PATH during installation
+
+#### macOS
+Using Homebrew (recommended):
+```bash
+brew install postgresql@14
+brew services start postgresql@14
+```
+
+Or download from [Postgres.app](https://postgresapp.com/)
+
+#### Linux (Ubuntu/Debian)
+```bash
+sudo apt update
+sudo apt install postgresql postgresql-contrib
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+```
+
+#### Verify Installation
+```bash
+psql --version
+```
+
 ## Database Setup
 
 1. Start PostgreSQL
