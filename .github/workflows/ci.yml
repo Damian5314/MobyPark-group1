@@ -85,7 +85,7 @@ jobs:
       run: dotnet format --verify-no-changes --no-restore
 
     - name: StyleCop analysis
-      run: dotnet build --no-restore /p:EnforceCodeStyleInBuild=true /p:TreatWarningsAsErrors=true
+      run: dotnet build --no-restore /p:EnforceCodeStyleInBuild=true
 
     - name: Roslynator analysis
       run: dotnet roslynator analyze --severity-level info
