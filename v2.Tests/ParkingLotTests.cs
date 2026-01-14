@@ -93,5 +93,56 @@ namespace v2.Tests.Unit
             created.Id.Should().BeGreaterThan(0);
             _context.ParkingLots.Count().Should().Be(151);
         }
+
+        [Fact]
+        public async Task UpdateAsync_Should_Modify_Existing_ParkingLot()
+        {
+            var lot = await _context.ParkingLots.FirstAsync();
+            lot.Name = "Updated Lot";
+            lot.Capacity = 200;
+
+            var updated = await _service.UpdateAsync(lot.Id, lot);
+
+            updated.Should().NotBeNull();
+            updated!.Name.Should().Be("Updated Lot");
+            updated.Capacity.Should().Be(200);
+        }
+
+        [Fact]
+        public async Task UpdateAsync_Should_Return_Null_When_NotFound()
+        {
+            var lot = new ParkingLot
+            {
+                Name = "NonExistent",
+                Location = "Rotterdam",
+                Address = "Nowhere",
+                Capacity = 50,
+                Tariff = 3,
+                DayTariff = 25
+            };
+
+            var updated = await _service.UpdateAsync(9999, lot);
+            updated.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task DeleteAsync_Should_Remove_ParkingLot_When_Exists()
+        {
+            var initialCount = _context.ParkingLots.Count();
+            var lot = await _context.ParkingLots.FirstAsync();
+
+            var deleted = await _service.DeleteAsync(lot.Id);
+
+            deleted.Should().BeTrue();
+            _context.ParkingLots.Count().Should().Be(initialCount - 1);
+            _context.ParkingLots.Find(lot.Id).Should().BeNull();
+        }
+
+        [Fact]
+        public async Task DeleteAsync_Should_Return_False_When_NotFound()
+        {
+            var deleted = await _service.DeleteAsync(9999999);
+            deleted.Should().BeFalse();
+        }
     }
 }
