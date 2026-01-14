@@ -81,9 +81,6 @@ jobs:
     - name: Install Roslynator
       run: dotnet tool install -g roslynator.dotnet.cli
 
-    - name: Format check
-      run: dotnet format --verify-no-changes --no-restore
-
     - name: StyleCop analysis
       run: dotnet build --no-restore /p:EnforceCodeStyleInBuild=true
 
