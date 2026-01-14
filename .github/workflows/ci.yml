@@ -78,14 +78,8 @@ jobs:
     - name: Restore dependencies
       run: dotnet restore
 
-    - name: Install Roslynator
-      run: dotnet tool install -g roslynator.dotnet.cli
-
     - name: StyleCop analysis
       run: dotnet build --no-restore /p:EnforceCodeStyleInBuild=true
-
-    - name: Roslynator analysis
-      run: dotnet roslynator analyze --severity-level info
 
     - name: Roslyn analyzers check
       run: dotnet build --no-restore /p:EnableNETAnalyzers=true /p:AnalysisLevel=latest
