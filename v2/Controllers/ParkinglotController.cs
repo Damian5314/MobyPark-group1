@@ -42,8 +42,21 @@ namespace v2.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] ParkingLot lot)
         {
-            var updated = await _service.UpdateAsync(id, lot);
-            return updated == null ? NotFound() : Ok(updated);
+            try
+            {
+                var updated = await _service.UpdateAsync(id, lot);
+                return Ok(updated); // Succesvol bijgewerkt
+            }
+            catch (ArgumentException ex)
+            {
+                // Ongeldige of ontbrekende velden
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Parkeerplaats bestaat niet
+                return NotFound(new { message = ex.Message });
+            }
         }
 
         [AdminOnly]

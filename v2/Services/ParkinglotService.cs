@@ -43,11 +43,21 @@ namespace v2.Services
             return lot;
         }
 
-        public async Task<ParkingLot?> UpdateAsync(int id, ParkingLot lot)
+        public async Task<ParkingLot> UpdateAsync(int id, ParkingLot lot)
         {
             var existing = await _context.ParkingLots.FindAsync(id);
+
             if (existing == null)
-                return null;
+                throw new InvalidOperationException($"Parking lot with id {id} was not found.");
+
+            if (string.IsNullOrWhiteSpace(lot.Name))
+                throw new ArgumentException("Parking lot name is required.");
+
+            if (lot.Capacity <= 0)
+                throw new ArgumentException("Parking lot capacity must be greater than 0.");
+
+            if (lot.Tariff < 0 || lot.DayTariff < 0)
+                throw new ArgumentException("Tariffs cannot be negative.");
 
             existing.Name = lot.Name;
             existing.Location = lot.Location;

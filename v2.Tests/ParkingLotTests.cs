@@ -97,19 +97,22 @@ namespace v2.Tests.Unit
         [Fact]
         public async Task UpdateAsync_Should_Modify_Existing_ParkingLot()
         {
+            // Arrange
             var lot = await _context.ParkingLots.FirstAsync();
             lot.Name = "Updated Lot";
             lot.Capacity = 200;
 
+            // Act
             var updated = await _service.UpdateAsync(lot.Id, lot);
 
+            // Assert
             updated.Should().NotBeNull();
             updated!.Name.Should().Be("Updated Lot");
             updated.Capacity.Should().Be(200);
         }
 
         [Fact]
-        public async Task UpdateAsync_Should_Return_Null_When_NotFound()
+        public async Task UpdateAsync_Should_Throw_When_ParkingLot_NotFound()
         {
             var lot = new ParkingLot
             {
@@ -121,21 +124,33 @@ namespace v2.Tests.Unit
                 DayTariff = 25
             };
 
-            var updated = await _service.UpdateAsync(9999, lot);
-            updated.Should().BeNull();
+            Func<Task> act = async () => await _service.UpdateAsync(9999, lot);
+
+            await act.Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("*not found*");
+        }
+
+        [Fact]
+        public async Task UpdateAsync_Should_Throw_When_InvalidFields()
+        {
+            var lot = await _context.ParkingLots.FirstAsync();
+            lot.Name = ""; // Naam is verplicht
+
+
+            Func<Task> act = async () => await _service.UpdateAsync(lot.Id, lot);
+
+            await act.Should().ThrowAsync<ArgumentException>()
+                .WithMessage("*name is required*");
         }
 
         [Fact]
         public async Task DeleteAsync_Should_Remove_ParkingLot_When_Exists()
         {
-            // Arrange
             var initialCount = _context.ParkingLots.Count();
             var lot = await _context.ParkingLots.FirstAsync();
 
-            // Act
             Func<Task> act = async () => await _service.DeleteAsync(lot.Id);
 
-            // Assert
             await act.Should().NotThrowAsync();
             _context.ParkingLots.Count().Should().Be(initialCount - 1);
             (await _context.ParkingLots.FindAsync(lot.Id)).Should().BeNull();
@@ -144,10 +159,8 @@ namespace v2.Tests.Unit
         [Fact]
         public async Task DeleteAsync_Should_Throw_When_ParkingLot_NotFound()
         {
-            // Act
             Func<Task> act = async () => await _service.DeleteAsync(9999999);
 
-            // Assert
             await act.Should().ThrowAsync<InvalidOperationException>()
                 .WithMessage("*not found*");
         }
