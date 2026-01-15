@@ -128,21 +128,28 @@ namespace v2.Tests.Unit
         [Fact]
         public async Task DeleteAsync_Should_Remove_ParkingLot_When_Exists()
         {
+            // Arrange
             var initialCount = _context.ParkingLots.Count();
             var lot = await _context.ParkingLots.FirstAsync();
 
-            var deleted = await _service.DeleteAsync(lot.Id);
+            // Act
+            Func<Task> act = async () => await _service.DeleteAsync(lot.Id);
 
-            deleted.Should().BeTrue();
+            // Assert
+            await act.Should().NotThrowAsync();
             _context.ParkingLots.Count().Should().Be(initialCount - 1);
-            _context.ParkingLots.Find(lot.Id).Should().BeNull();
+            (await _context.ParkingLots.FindAsync(lot.Id)).Should().BeNull();
         }
 
         [Fact]
-        public async Task DeleteAsync_Should_Return_False_When_NotFound()
+        public async Task DeleteAsync_Should_Throw_When_ParkingLot_NotFound()
         {
-            var deleted = await _service.DeleteAsync(9999999);
-            deleted.Should().BeFalse();
+            // Act
+            Func<Task> act = async () => await _service.DeleteAsync(9999999);
+
+            // Assert
+            await act.Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("*not found*");
         }
     }
 }

@@ -13,7 +13,7 @@ namespace v2.Services
             _context = context;
         }
 
-        //by userid
+        // by userid
         public async Task<Billing?> GetByUserIdAsync(int userId)
         {
             var user = await _context.Users
@@ -23,7 +23,7 @@ namespace v2.Services
             if (user == null)
                 return null;
 
-            //payments per user
+            // payments per user
             var payments = await _context.Payments
                 .AsNoTracking()
                 .Where(p => p.Initiator == user.Username)

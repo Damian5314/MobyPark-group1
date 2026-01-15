@@ -67,15 +67,15 @@ namespace v2.Services
             return existing;
         }
 
-        public async Task<bool> DeleteAsync(int id)
+        public async Task DeleteAsync(int id)
         {
             var lot = await _context.ParkingLots.FindAsync(id);
+
             if (lot == null)
-                return false;
+                throw new InvalidOperationException($"Parking lot with id {id} was not found.");
 
             _context.ParkingLots.Remove(lot);
             await _context.SaveChangesAsync();
-            return true;
         }
     }
 }

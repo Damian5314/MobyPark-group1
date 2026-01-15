@@ -10,6 +10,6 @@ namespace v2.Services
         Task<ParkingLot?> GetByIdAsync(int id);
         Task<ParkingLot> CreateAsync(ParkingLot lot);
         Task<ParkingLot?> UpdateAsync(int id, ParkingLot lot);
-        Task<bool> DeleteAsync(int id);
+        Task DeleteAsync(int id);
     }
 }
