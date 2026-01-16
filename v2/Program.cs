@@ -22,7 +22,7 @@ Log.Logger = new LoggerConfiguration()
         queueLimitBytes: null,
         textFormatter: new Serilog.Formatting.Compact.RenderedCompactJsonFormatter(),
         restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Information,
-        httpClient: new PapertrailHttpClient("LmhrdJLKYZ1p5gT4w7_I1aRd0uOGj1OnVK9YeI98BRv4deI_CF1hGHNk13gQDisOImsDrk")
+        httpClient: new PapertrailHttpClient("LmhrdJLKYZ1p5g14w7_I1aRd0uUGj1OnVK9YeI9B8Rv4deI_CFlhGHNk13gQDisOImsaDrk")
     )
     .CreateLogger();
 
