@@ -1,5 +1,7 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Moq;
 using v2.Data;
 using v2.Models;
 using v2.Services;
@@ -19,7 +21,8 @@ namespace v2.Tests.Unit
                 .Options;
 
             _context = new AppDbContext(options);
-            _service = new ParkingLotService(_context);
+            var loggerMock = new Mock<ILogger<ParkingLotService>>();
+            _service = new ParkingLotService(_context, loggerMock.Object);
 
             SeedDatabase();
         }

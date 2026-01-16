@@ -3,6 +3,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Moq;
 using v2.Data;
 using v2.Models;
 using v2.Services;
@@ -24,7 +26,8 @@ namespace v2.Tests
             _context = new AppDbContext(options);
             SeedDatabase(_context);
 
-            _service = new BillingService(_context);
+            var loggerMock = new Mock<ILogger<BillingService>>();
+            _service = new BillingService(_context, loggerMock.Object);
         }
 
         private void SeedDatabase(AppDbContext context)
