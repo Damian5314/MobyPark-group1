@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Moq;
 using v2.Data;
 using v2.Models;
@@ -28,7 +29,8 @@ namespace v2.Tests
 
             SeedDatabase(_context);
 
-            _service = new ReservationService(_context, _parkingSessionMock.Object);
+            var loggerMock = new Mock<ILogger<ReservationService>>();
+            _service = new ReservationService(_context, _parkingSessionMock.Object, loggerMock.Object);
         }
 
         private void SeedDatabase(AppDbContext context)
