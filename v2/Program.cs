@@ -21,8 +21,8 @@ Log.Logger = new LoggerConfiguration()
         requestUri: "https://logs.collector.eu-01.cloud.solarwinds.com/v1/logs",
         queueLimitBytes: null,
         textFormatter: new Serilog.Formatting.Compact.RenderedCompactJsonFormatter(),
-        restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Warning,
-        httpClient: new PapertrailHttpClient("bdiPnQ8PG57KRLDKmymquZopt3KQaKTnmQ4S3UCrViFmCnnBkiHPkLCDmAKtr009sngKs_c")
+        restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Information,
+        httpClient: new PapertrailHttpClient("lV1xrFnMk9XnZEDwu1s4kIoPUI4sWLK1PbwonMF8ORVSpcEuL3A6HQfTk6n9tqctUBdUssA")
     )
     .CreateLogger();
 
