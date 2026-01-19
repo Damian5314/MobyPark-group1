@@ -14,7 +14,7 @@ namespace v2.Services
         Task<ParkingSession?> GetByIdAsync(int sessionId);
 
         Task<IEnumerable<ParkingSession>> GetActiveSessionsAsync();
-        Task<IEnumerable<ParkingSession>> GetActiveSessionsByUsernameAsync(string username);
+        Task<IEnumerable<ParkingSession>> GetActiveSessionsByUserIdAsync(int userId);
         Task<ParkingSession> CreateFromReservationAsync(
             int parkingLotId,
             string licensePlate,

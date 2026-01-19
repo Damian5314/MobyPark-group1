@@ -82,11 +82,25 @@ public class PaymentController : ControllerBase
         return Ok(sessions);
     }
 
-    [AdminOnly]
     [HttpPost("pay-session")]
-    public async Task<IActionResult> PaySingleSession([FromBody] PaySingleSessionDto dto)
+    public async Task<IActionResult> PaySingleSession([FromBody] UserPaySingleSessionDto dto)
     {
-        var payment = await _service.PaySingleSessionAsync(dto);
+        var username = _authService.GetCurrentUsername();
+        if (username == null)
+        {
+            return Unauthorized(new { error = "No active user session" });
+        }
+
+        var paymentDto = new PaySingleSessionDto
+        {
+            LicensePlate = dto.LicensePlate,
+            SessionId = dto.SessionId,
+            Method = dto.Method,
+            Initiator = username,
+            Bank = dto.Bank
+        };
+
+        var payment = await _service.PaySingleSessionAsync(paymentDto);
         return Ok(payment);
     }
 }

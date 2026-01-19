@@ -172,21 +172,31 @@ namespace v2.Services
             }
         }
 
-        public async Task<IEnumerable<ParkingSession>> GetActiveSessionsByUsernameAsync(string username)
+        public async Task<IEnumerable<ParkingSession>> GetActiveSessionsByUserIdAsync(int userId)
         {
             try
             {
-                _logger.LogInformation("Fetching active parking sessions for user: {Username}", username);
+                _logger.LogInformation("Fetching active parking sessions for user ID: {UserId}", userId);
+
+                // Get all license plates belonging to this user
+                var userLicensePlates = await _context.Vehicles
+                    .AsNoTracking()
+                    .Where(v => v.UserId == userId)
+                    .Select(v => v.LicensePlate)
+                    .ToListAsync();
+
+                // Get active sessions for those license plates
                 var sessions = await _context.ParkingSessions
                     .AsNoTracking()
-                    .Where(s => s.Stopped == default && s.Username == username)
+                    .Where(s => s.Stopped == default && userLicensePlates.Contains(s.LicensePlate))
                     .ToListAsync();
-                _logger.LogInformation("Retrieved {SessionCount} active parking sessions for user: {Username}", sessions.Count, username);
+
+                _logger.LogInformation("Retrieved {SessionCount} active parking sessions for user ID: {UserId}", sessions.Count, userId);
                 return sessions;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching active parking sessions for user: {Username}", username);
+                _logger.LogError(ex, "Error fetching active parking sessions for user ID: {UserId}", userId);
                 throw;
             }
         }
