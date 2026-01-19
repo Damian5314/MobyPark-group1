@@ -35,6 +35,7 @@ namespace v2.Services
             }
         }
 
+        // get parkinglot by id 
         public async Task<ParkingLot?> GetByIdAsync(int id)
         {
             try
