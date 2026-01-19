@@ -66,11 +66,32 @@ public class ReservationController : ControllerBase
         return Ok(reservation);
     }
 
-    [AdminOnly]
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] ReservationCreateDto dto)
+    public async Task<IActionResult> Create([FromBody] UserReservationCreateDto dto)
     {
-        var created = await _service.CreateAsync(dto);
+        var username = _authService.GetCurrentUsername();
+        if (username == null)
+        {
+            return Unauthorized(new { error = "No active user session" });
+        }
+
+        var user = await _userProfileService.GetByUsernameAsync(username);
+        if (user == null)
+        {
+            return Unauthorized(new { error = "User not found" });
+        }
+
+        var reservationDto = new ReservationCreateDto
+        {
+            UserId = user.Id,
+            VehicleId = dto.VehicleId,
+            ParkingLotId = dto.ParkingLotId,
+            StartTime = dto.StartTime,
+            EndTime = dto.EndTime,
+            Status = "Active"
+        };
+
+        var created = await _service.CreateAsync(reservationDto);
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
 
