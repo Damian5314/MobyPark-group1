@@ -2,6 +2,8 @@ using System;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Moq;
 using v2.Data;
 using v2.Models;
 using v2.Security;
@@ -24,7 +26,8 @@ namespace v2.Tests
             _context = new AppDbContext(options);
             SeedDatabase(_context);
 
-            _service = new AuthService(_context);
+            var loggerMock = new Mock<ILogger<AuthService>>();
+            _service = new AuthService(_context, loggerMock.Object);
         }
 
         private void SeedDatabase(AppDbContext context)

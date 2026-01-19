@@ -1,10 +1,34 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using Serilog;
+using Serilog.Sinks.Http;
 using v2.Data;
+using v2.Logging;
+using v2.Middleware;
 using v2.Services;
 
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft", Serilog.Events.LogEventLevel.Warning)
+    .MinimumLevel.Override("Microsoft.EntityFrameworkCore", Serilog.Events.LogEventLevel.Warning)
+    .MinimumLevel.Override("System", Serilog.Events.LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .Enrich.WithProperty("Application", "MobyPark-API")
+    .Enrich.WithProperty("Environment", Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production")
+    .WriteTo.Console()
+    .WriteTo.Http(
+        requestUri: "https://logs.collector.eu-01.cloud.solarwinds.com/v1/logs",
+        queueLimitBytes: null,
+        textFormatter: new Serilog.Formatting.Compact.RenderedCompactJsonFormatter(),
+        restrictedToMinimumLevel: Serilog.Events.LogEventLevel.Information,
+        httpClient: new PapertrailHttpClient("LmhrdJLKYZ1p5g14w7_I1aRd0uUGj1OnVK9YeI9B8Rv4deI_CFlhGHNk13gQDisOImsaDrk")
+    )
+    .CreateLogger();
+
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Host.UseSerilog();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql("Host=localhost;Port=5432;Database=mobypark;Username=postgres;Password=postgres"));
@@ -109,6 +133,8 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
 });
 
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseHttpsRedirection();
@@ -125,6 +151,18 @@ Console.WriteLine("Server running at: http://localhost:5000");
 Console.WriteLine("Swagger UI at: http://localhost:5000/swagger");
 Console.ResetColor();
 
-app.Run();
+try
+{
+    Log.Information("Starting MobyPark API");
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.CloseAndFlush();
+}
 
 public partial class Program { }
