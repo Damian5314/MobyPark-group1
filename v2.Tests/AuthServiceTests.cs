@@ -45,7 +45,7 @@ namespace v2.Tests
                     Role = "USER",
                     Name = "Existing User",
                     Email = "existing@test.com",
-                    Phone = "+31612345678",
+                    Phone = "0612345678",
                     BirthYear = 1990,
                     Active = true,
                     CreatedAt = DateTime.UtcNow
@@ -64,7 +64,7 @@ namespace v2.Tests
                 Password = "password123",
                 Name = "New User",
                 Email = "newuser@test.com",
-                Phone = "+31612345679",
+                Phone = "0612345679",
                 BirthYear = 1995
             };
 
@@ -91,7 +91,7 @@ namespace v2.Tests
                 Password = "mypassword",
                 Name = "Hash User",
                 Email = "hash@test.com",
-                Phone = "+31612345680",
+                Phone = "0612345680",
                 BirthYear = 1992
             };
 
@@ -112,7 +112,7 @@ namespace v2.Tests
                 Password = "password123",
                 Name = "Duplicate User",
                 Email = "duplicate@test.com",
-                Phone = "+31612345681",
+                Phone = "0612345681",
                 BirthYear = 1993
             };
 
@@ -131,7 +131,7 @@ namespace v2.Tests
                 Password = "password123",
                 Name = "Unique User",
                 Email = "existing@test.com", // Email already exists
-                Phone = "+31612345682",
+                Phone = "0612345682",
                 BirthYear = 1994
             };
 
@@ -311,7 +311,7 @@ namespace v2.Tests
                 Password = "password123",
                 Name = "Timestamp User",
                 Email = "timestamp@test.com",
-                Phone = "+31612345683",
+                Phone = "0612345683",
                 BirthYear = 1996
             };
 
