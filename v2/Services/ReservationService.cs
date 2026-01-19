@@ -36,6 +36,7 @@ public class ReservationService : IReservationService
         }
     }
 
+    // get reservation by id
     public async Task<Reservation?> GetByIdAsync(int id)
     {
         try
@@ -59,6 +60,8 @@ public class ReservationService : IReservationService
         }
     }
 
+
+    // reservation functie aanmaken
     public async Task<Reservation> CreateAsync(ReservationCreateDto dto)
     {
         try
