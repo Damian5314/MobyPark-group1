@@ -31,6 +31,8 @@ public class ReservationService : IReservationService
             .FirstOrDefaultAsync(r => r.Id == id);
     }
 
+
+    // reservation functie aanmaken
     public async Task<Reservation> CreateAsync(ReservationCreateDto dto)
     {
         var lot = await _context.ParkingLots.FirstOrDefaultAsync(l => l.Id == dto.ParkingLotId);
