@@ -53,10 +53,10 @@ public class PaymentController : ControllerBase
     }
 
     [AdminOnly]
-    [HttpGet("initiator/{initiator}")]
-    public async Task<IActionResult> GetByInitiator(string initiator)
+    [HttpGet("user/{username}")]
+    public async Task<IActionResult> GetByUsername(string username)
     {
-        var payments = await _service.GetByInitiatorAsync(initiator);
+        var payments = await _service.GetByInitiatorAsync(username);
         return Ok(payments);
     }
 
