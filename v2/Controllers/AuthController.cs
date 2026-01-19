@@ -26,7 +26,7 @@ namespace v2.Controllers
 
                 return Ok(new
                 {
-                    message = "Registered and logged in successfully.",
+                    message = "Registered successfully.",
                     token = response.Token
                 });
             }
