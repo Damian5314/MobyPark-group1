@@ -45,7 +45,7 @@ namespace v2.Tests
                     Role = "User",
                     Name = "Test User 1",
                     Email = "user1@test.com",
-                    Phone = "+31612345678",
+                    Phone = "0612345678",
                     BirthYear = 1990,
                     Active = true
                 },
@@ -57,7 +57,7 @@ namespace v2.Tests
                     Role = "User",
                     Name = "Test User 2",
                     Email = "user2@test.com",
-                    Phone = "+31612345679",
+                    Phone = "0612345679",
                     BirthYear = 1985,
                     Active = true
                 },
@@ -69,7 +69,7 @@ namespace v2.Tests
                     Role = "User",
                     Name = "Nonexistent User",
                     Email = "nonexistent@test.com",
-                    Phone = "+31600000000",
+                    Phone = "0600000000",
                     BirthYear = 1980,
                     Active = true
                 }

@@ -1,6 +1,7 @@
 namespace v2.Models
 {
     using System.ComponentModel.DataAnnotations;
+    using v2.Validation;
 
     public class RegisterRequest
     {
@@ -18,6 +19,7 @@ namespace v2.Models
         public string Email { get; set; } = "";
 
         [Required]
+        [DutchPhoneNumber]
         public string Phone { get; set; } = "";
 
         [Required]
