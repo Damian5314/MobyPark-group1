@@ -43,7 +43,7 @@ namespace v2.Tests
                 Password = PasswordHelper.HashPassword("test123"),
                 Name = "Test User",
                 Email = "testuser@example.com",
-                Phone = "123456",
+                Phone = "0612345684",
                 BirthYear = 1990,
                 Role = "USER",
                 Active = true
@@ -57,7 +57,7 @@ namespace v2.Tests
                 Password = PasswordHelper.HashPassword("pw"),
                 Name = "Other User",
                 Email = "other@example.com",
-                Phone = "999",
+                Phone = "0612345685",
                 BirthYear = 1980,
                 Role = "USER",
                 Active = true
@@ -84,7 +84,7 @@ namespace v2.Tests
                 Username = "testuser", // keep same
                 Name = "Updated Name",
                 Email = "updated@example.com",
-                Phone = "777",
+                Phone = "0612345686",
                 BirthYear = 1995
             };
 
@@ -94,7 +94,7 @@ namespace v2.Tests
             updated!.Username.Should().Be("testuser");
             updated.Name.Should().Be("Updated Name");
             updated.Email.Should().Be("updated@example.com");
-            updated.Phone.Should().Be("777");
+            updated.Phone.Should().Be("0612345686");
             updated.BirthYear.Should().Be(1995);
         }
 
@@ -106,7 +106,7 @@ namespace v2.Tests
                 Username = "newname",
                 Name = "Test User",
                 Email = "testuser@example.com",
-                Phone = "123456",
+                Phone = "0612345687",
                 BirthYear = 1990
             };
 
@@ -128,7 +128,7 @@ namespace v2.Tests
                 Username = "takenname", // already exists (seeded)
                 Name = "X",
                 Email = "x@x.com",
-                Phone = "1",
+                Phone = "0612345688",
                 BirthYear = 2000
             };
 

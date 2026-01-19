@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using v2.Data;
@@ -11,9 +12,11 @@ using v2.Data;
 namespace v2.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260119192859_AddParkingLotForeignKeys")]
+    partial class AddParkingLotForeignKeys
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -96,8 +99,6 @@ namespace v2.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("ParkingLotId");
 
                     b.HasIndex("Transaction")
                         .IsUnique();
@@ -298,11 +299,6 @@ namespace v2.Migrations
 
             modelBuilder.Entity("Payment", b =>
                 {
-                    b.HasOne("v2.Models.ParkingLot", null)
-                        .WithMany()
-                        .HasForeignKey("ParkingLotId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
                     b.OwnsOne("TData", "TData", b1 =>
                         {
                             b1.Property<int>("PaymentId")
@@ -357,7 +353,7 @@ namespace v2.Migrations
                     b.HasOne("v2.Models.ParkingLot", null)
                         .WithMany()
                         .HasForeignKey("ParkingLotId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("v2.Models.UserProfile", null)

@@ -55,11 +55,27 @@ namespace v2.Data
                 .HasMany<Reservation>()
                 .WithOne()
                 .HasForeignKey(r => r.ParkingLotId)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ParkingLot>()
+                .HasMany<ParkingSession>()
+                .WithOne()
+                .HasForeignKey(ps => ps.ParkingLotId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<ParkingLot>()
+                .HasMany<Payment>()
+                .WithOne()
+                .HasForeignKey(p => p.ParkingLotId)
+                .OnDelete(DeleteBehavior.Cascade);
 
             // RESERVATION
             modelBuilder.Entity<Reservation>()
                 .HasKey(r => r.Id);
+
+            // PARKING SESSION
+            modelBuilder.Entity<ParkingSession>()
+                .HasKey(ps => ps.Id);
 
             // PAYMENT
             modelBuilder.Entity<Payment>()
