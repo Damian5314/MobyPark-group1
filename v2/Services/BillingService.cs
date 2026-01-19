@@ -59,6 +59,39 @@ namespace v2.Services
             }
         }
         
+        //by username
+        public async Task<Billing?> GetByUsernameAsync(string username)
+        {
+            try
+            {
+                _logger.LogInformation("Fetching billing information for username: {Username}", username);
+
+                var payments = await _context.Payments
+                    .AsNoTracking()
+                    .Where(p => p.Initiator == username)
+                    .ToListAsync();
+
+                if (!payments.Any())
+                {
+                    _logger.LogInformation("No payments found for username: {Username}", username);
+                    return null;
+                }
+
+                _logger.LogInformation("Retrieved {PaymentCount} payments for username: {Username}", payments.Count, username);
+
+                return new Billing
+                {
+                    User = username,
+                    Payments = payments
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching billing information for username: {Username}", username);
+                throw;
+            }
+        }
+
         //all billings
         public async Task<IEnumerable<Billing>> GetAllAsync()
         {
