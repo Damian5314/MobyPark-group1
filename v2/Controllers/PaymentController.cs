@@ -8,31 +8,55 @@ using v2.Security;
 public class PaymentController : ControllerBase
 {
     private readonly IPaymentService _service;
+    private readonly IAuthService _authService;
 
-    public PaymentController(IPaymentService service)
+    public PaymentController(IPaymentService service, IAuthService authService)
     {
         _service = service;
+        _authService = authService;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var payments = await _service.GetAllAsync();
+        var username = _authService.GetCurrentUsername();
+        if (username == null)
+        {
+            return Unauthorized(new { error = "No active user session" });
+        }
+
+        var payments = await _service.GetByInitiatorAsync(username);
         return Ok(payments);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
+        var username = _authService.GetCurrentUsername();
+        if (username == null)
+        {
+            return Unauthorized(new { error = "No active user session" });
+        }
+
         var payment = await _service.GetByIdAsync(id);
-        return payment == null ? NotFound() : Ok(payment);
+        if (payment == null)
+        {
+            return NotFound();
+        }
+
+        if (payment.Initiator != username)
+        {
+            return Forbid();
+        }
+
+        return Ok(payment);
     }
 
     [AdminOnly]
-    [HttpGet("initiator/{initiator}")]
-    public async Task<IActionResult> GetByInitiator(string initiator)
+    [HttpGet("user/{username}")]
+    public async Task<IActionResult> GetByUsername(string username)
     {
-        var payments = await _service.GetByInitiatorAsync(initiator);
+        var payments = await _service.GetByInitiatorAsync(username);
         return Ok(payments);
     }
 
@@ -58,11 +82,25 @@ public class PaymentController : ControllerBase
         return Ok(sessions);
     }
 
-    [AdminOnly]
     [HttpPost("pay-session")]
-    public async Task<IActionResult> PaySingleSession([FromBody] PaySingleSessionDto dto)
+    public async Task<IActionResult> PaySingleSession([FromBody] UserPaySingleSessionDto dto)
     {
-        var payment = await _service.PaySingleSessionAsync(dto);
+        var username = _authService.GetCurrentUsername();
+        if (username == null)
+        {
+            return Unauthorized(new { error = "No active user session" });
+        }
+
+        var paymentDto = new PaySingleSessionDto
+        {
+            LicensePlate = dto.LicensePlate,
+            SessionId = dto.SessionId,
+            Method = dto.Method,
+            Initiator = username,
+            Bank = dto.Bank
+        };
+
+        var payment = await _service.PaySingleSessionAsync(paymentDto);
         return Ok(payment);
     }
 }

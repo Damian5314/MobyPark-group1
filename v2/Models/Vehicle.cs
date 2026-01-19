@@ -25,3 +25,21 @@ public class Vehicle
     [JsonProperty("created_at")]
     public DateTime CreatedAt { get; set; }
 }
+
+public class VehicleCreateDto
+{
+    [JsonProperty("license_plate")]
+    public string LicensePlate { get; set; } = null!;
+
+    [JsonProperty("make")]
+    public string Make { get; set; } = null!;
+
+    [JsonProperty("model")]
+    public string Model { get; set; } = null!;
+
+    [JsonProperty("color")]
+    public string Color { get; set; } = null!;
+
+    [JsonProperty("year")]
+    public int Year { get; set; }
+}

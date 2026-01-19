@@ -36,6 +36,27 @@ public class ReservationService : IReservationService
         }
     }
 
+    public async Task<IEnumerable<Reservation>> GetByUserIdAsync(int userId)
+    {
+        try
+        {
+            _logger.LogInformation("Fetching reservations for user ID: {UserId}", userId);
+            var reservations = await _context.Reservations
+                .AsNoTracking()
+                .Where(r => r.UserId == userId)
+                .OrderByDescending(r => r.CreatedAt)
+                .Take(100)
+                .ToListAsync();
+            _logger.LogInformation("Retrieved {ReservationCount} reservations for user {UserId}", reservations.Count, userId);
+            return reservations;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching reservations for user ID: {UserId}", userId);
+            throw;
+        }
+    }
+
     // get reservation by id
     public async Task<Reservation?> GetByIdAsync(int id)
     {
