@@ -23,6 +23,7 @@ public class ReservationService : IReservationService
             .ToListAsync();
     }
 
+    // get reservation by id
     public async Task<Reservation?> GetByIdAsync(int id)
     {
         return await _context.Reservations
