@@ -58,7 +58,8 @@ namespace v2.Services
                 throw;
             }
         }
-
+        
+        //all billings
         public async Task<IEnumerable<Billing>> GetAllAsync()
         {
             try
