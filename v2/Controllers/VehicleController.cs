@@ -79,6 +79,11 @@ namespace v2.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] VehicleCreateDto dto)
         {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
             var username = _authService.GetCurrentUsername();
             if (username == null)
             {

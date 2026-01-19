@@ -1,4 +1,6 @@
 using Newtonsoft.Json;
+using v2.Validation;
+using System.ComponentModel.DataAnnotations;
 
 public class Vehicle
 {
@@ -28,6 +30,8 @@ public class Vehicle
 
 public class VehicleCreateDto
 {
+    [Required]
+    [DutchLicensePlate]
     [JsonProperty("license_plate")]
     public string LicensePlate { get; set; } = null!;
 
