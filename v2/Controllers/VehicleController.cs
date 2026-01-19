@@ -76,10 +76,31 @@ namespace v2.Controllers
             return Ok(vehicles);
         }
 
-        [AdminOnly]
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] Vehicle vehicle)
+        public async Task<IActionResult> Create([FromBody] VehicleCreateDto dto)
         {
+            var username = _authService.GetCurrentUsername();
+            if (username == null)
+            {
+                return Unauthorized(new { error = "No active user session" });
+            }
+
+            var user = await _userProfileService.GetByUsernameAsync(username);
+            if (user == null)
+            {
+                return Unauthorized(new { error = "User not found" });
+            }
+
+            var vehicle = new Vehicle
+            {
+                UserId = user.Id,
+                LicensePlate = dto.LicensePlate,
+                Make = dto.Make,
+                Model = dto.Model,
+                Color = dto.Color,
+                Year = dto.Year
+            };
+
             var created = await _service.CreateAsync(vehicle);
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
