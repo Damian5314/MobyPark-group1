@@ -8,10 +8,12 @@ using v2.Security;
 public class ParkingSessionController : ControllerBase
 {
     private readonly IParkingSessionService _service;
+    private readonly IAuthService _authService;
 
-    public ParkingSessionController(IParkingSessionService service)
+    public ParkingSessionController(IParkingSessionService service, IAuthService authService)
     {
         _service = service;
+        _authService = authService;
     }
 
 
@@ -38,11 +40,16 @@ public class ParkingSessionController : ControllerBase
         return session == null ? NotFound() : Ok(session);
     }
 
-    [AdminOnly]
     [HttpGet("active")]
     public async Task<IActionResult> GetActiveSessions()
     {
-        var sessions = await _service.GetActiveSessionsAsync();
+        var username = _authService.GetCurrentUsername();
+        if (username == null)
+        {
+            return Unauthorized(new { error = "No active user session" });
+        }
+
+        var sessions = await _service.GetActiveSessionsByUsernameAsync(username);
         return Ok(sessions);
     }
 }

@@ -8,24 +8,48 @@ using v2.Security;
 public class PaymentController : ControllerBase
 {
     private readonly IPaymentService _service;
+    private readonly IAuthService _authService;
 
-    public PaymentController(IPaymentService service)
+    public PaymentController(IPaymentService service, IAuthService authService)
     {
         _service = service;
+        _authService = authService;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var payments = await _service.GetAllAsync();
+        var username = _authService.GetCurrentUsername();
+        if (username == null)
+        {
+            return Unauthorized(new { error = "No active user session" });
+        }
+
+        var payments = await _service.GetByInitiatorAsync(username);
         return Ok(payments);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
+        var username = _authService.GetCurrentUsername();
+        if (username == null)
+        {
+            return Unauthorized(new { error = "No active user session" });
+        }
+
         var payment = await _service.GetByIdAsync(id);
-        return payment == null ? NotFound() : Ok(payment);
+        if (payment == null)
+        {
+            return NotFound();
+        }
+
+        if (payment.Initiator != username)
+        {
+            return Forbid();
+        }
+
+        return Ok(payment);
     }
 
     [AdminOnly]

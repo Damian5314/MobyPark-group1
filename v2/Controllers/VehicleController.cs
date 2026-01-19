@@ -9,27 +9,66 @@ namespace v2.Controllers
     public class VehicleController : ControllerBase
     {
         private readonly IVehicleService _service;
+        private readonly IAuthService _authService;
+        private readonly IUserProfileService _userProfileService;
 
-        public VehicleController(IVehicleService service)
+        public VehicleController(IVehicleService service, IAuthService authService, IUserProfileService userProfileService)
         {
             _service = service;
+            _authService = authService;
+            _userProfileService = userProfileService;
         }
 
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var result = await _service.GetAllAsync();
-            return Ok(result);
+            var username = _authService.GetCurrentUsername();
+            if (username == null)
+            {
+                return Unauthorized(new { error = "No active user session" });
+            }
+
+            var user = await _userProfileService.GetByUsernameAsync(username);
+            if (user == null)
+            {
+                return Unauthorized(new { error = "User not found" });
+            }
+
+            var vehicles = await _service.GetByUserIdAsync(user.Id);
+            return Ok(vehicles);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
+            var username = _authService.GetCurrentUsername();
+            if (username == null)
+            {
+                return Unauthorized(new { error = "No active user session" });
+            }
+
+            var user = await _userProfileService.GetByUsernameAsync(username);
+            if (user == null)
+            {
+                return Unauthorized(new { error = "User not found" });
+            }
+
             var vehicle = await _service.GetByIdAsync(id);
-            return vehicle == null ? NotFound() : Ok(vehicle);
+            if (vehicle == null)
+            {
+                return NotFound();
+            }
+
+            if (vehicle.UserId != user.Id)
+            {
+                return Forbid();
+            }
+
+            return Ok(vehicle);
         }
 
+        [AdminOnly]
         [HttpGet("user/{userId}")]
         public async Task<IActionResult> GetByUser(int userId)
         {

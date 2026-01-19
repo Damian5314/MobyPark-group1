@@ -172,6 +172,25 @@ namespace v2.Services
             }
         }
 
+        public async Task<IEnumerable<ParkingSession>> GetActiveSessionsByUsernameAsync(string username)
+        {
+            try
+            {
+                _logger.LogInformation("Fetching active parking sessions for user: {Username}", username);
+                var sessions = await _context.ParkingSessions
+                    .AsNoTracking()
+                    .Where(s => s.Stopped == default && s.Username == username)
+                    .ToListAsync();
+                _logger.LogInformation("Retrieved {SessionCount} active parking sessions for user: {Username}", sessions.Count, username);
+                return sessions;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching active parking sessions for user: {Username}", username);
+                throw;
+            }
+        }
+
         private static decimal CalculateCost(int minutes, ParkingLot lot)
         {
             if (minutes <= 60)

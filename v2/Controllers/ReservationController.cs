@@ -8,24 +8,62 @@ using v2.Security;
 public class ReservationController : ControllerBase
 {
     private readonly IReservationService _service;
+    private readonly IAuthService _authService;
+    private readonly IUserProfileService _userProfileService;
 
-    public ReservationController(IReservationService service)
+    public ReservationController(IReservationService service, IAuthService authService, IUserProfileService userProfileService)
     {
         _service = service;
+        _authService = authService;
+        _userProfileService = userProfileService;
     }
 
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
-        var reservations = await _service.GetAllAsync();
+        var username = _authService.GetCurrentUsername();
+        if (username == null)
+        {
+            return Unauthorized(new { error = "No active user session" });
+        }
+
+        var user = await _userProfileService.GetByUsernameAsync(username);
+        if (user == null)
+        {
+            return Unauthorized(new { error = "User not found" });
+        }
+
+        var reservations = await _service.GetByUserIdAsync(user.Id);
         return Ok(reservations);
     }
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
+        var username = _authService.GetCurrentUsername();
+        if (username == null)
+        {
+            return Unauthorized(new { error = "No active user session" });
+        }
+
+        var user = await _userProfileService.GetByUsernameAsync(username);
+        if (user == null)
+        {
+            return Unauthorized(new { error = "User not found" });
+        }
+
         var reservation = await _service.GetByIdAsync(id);
-        return reservation == null ? NotFound() : Ok(reservation);
+        if (reservation == null)
+        {
+            return NotFound();
+        }
+
+        if (reservation.UserId != user.Id)
+        {
+            return Forbid();
+        }
+
+        return Ok(reservation);
     }
 
     [AdminOnly]
